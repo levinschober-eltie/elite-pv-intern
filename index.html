@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elite PV Intern</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+      @media (max-width: 768px) {
+        .epv-sidebar { display: none !important; }
+        .epv-mobile-header { display: flex !important; }
+        .epv-content { margin-left: 0 !important; padding: 14px !important; padding-top: 56px !important; }
+      }
+      .epv-mobile-header { display: none; }
+      /* Scrollbare Tabellen auf Mobile */
+      .epv-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      /* Buttons nicht abschneiden */
+      @media (max-width: 480px) {
+        button { font-size: 12px !important; padding: 8px 12px !important; }
+      }
+      /* Tab-Scrollbar verstecken */
+      div::-webkit-scrollbar { height: 0; width: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
