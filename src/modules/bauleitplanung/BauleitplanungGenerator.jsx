@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
-import { DURCHFUEHRUNG_KLAUSELN, KOMMUNAL_KLAUSELN } from "./bauleitplanungClauses";
+import { DURCHFUEHRUNG_KLAUSELN, KOMMUNAL_KLAUSELN, AUSGLEICH_KLAUSELN } from "./bauleitplanungClauses";
 import {
   generateDurchfuehrungsvertragDocx,
   generateKommunalbeteiligungDocx,
+  generateAusgleichsvertragDocx,
 } from "./bauleitplanungDocxExport";
 import {
   TextInput,
@@ -34,6 +35,9 @@ export default function BauleitplanungGenerator() {
   );
   const [kbKlauseln, setKbKlauseln] = useState(
     KOMMUNAL_KLAUSELN.map((k) => ({ ...k }))
+  );
+  const [agKlauseln, setAgKlauseln] = useState(
+    AUSGLEICH_KLAUSELN.map((k) => ({ ...k }))
   );
 
   // Formulardaten
@@ -75,6 +79,14 @@ export default function BauleitplanungGenerator() {
     iban: "",
     bic: "",
     bank: "",
+    // Ökologischer Ausgleich
+    ausgleichFlurstuecke: "",
+    ausgleichFlaecheHa: "",
+    massnahmenText: "a) Extensivgrünland unter und zwischen Modulreihen: Entwicklung artenreicher Magerwiesen durch 1–2× jährliche Mahd (frühestens ab 15. Juni), Abräumen des Mähguts\nb) Hecken- und Gehölzpflanzungen: Eingrünung des Anlagengeländes mit standortgerechten, heimischen Gehölzen (mind. 3-reihig)\nc) Blühstreifen / Brachestreifen: Randstreifen von mind. 3 m Breite mit regionalem Saatgut (Regiosaatgut)\nd) Nisthilfen / Artenschutz: Installation von Nistkästen für Vögel und Fledermäuse an Zaunpfosten und Trafostationen",
+    monitoringIntervall: "jährlich",
+    buergschaftAusgleich: "",
+    fristUmsetzung: "",
+    pflegedauerJahre: "5",
   });
 
   const update = (key) => (value) => {
@@ -94,6 +106,8 @@ export default function BauleitplanungGenerator() {
   const laufzeitJahre = parseInt(formData.laufzeitJahre) || 20;
   const gesamtzuwendung = jahreszuwendung * laufzeitJahre;
 
+  const buergschaftAusgleich = parseFloat(formData.buergschaftAusgleich) || 0;
+
   // Warnungen
   const warnungen = [];
   if (!formData.gemeindeName) warnungen.push("Gemeindename fehlt – Pflichtfeld");
@@ -102,15 +116,24 @@ export default function BauleitplanungGenerator() {
   if (vertragstyp === "kommunal" && jahresstrommenge === 0) {
     warnungen.push("Jahresstrommenge fehlt – für Zuwendungsberechnung nötig");
   }
+  if (vertragstyp === "ausgleich" && !formData.ausgleichFlurstuecke) {
+    warnungen.push("Ausgleichsflurstücke fehlen – Pflichtfeld");
+  }
 
   const exportGesperrt = !formData.gemeindeName || !formData.projektName || leistung === 0;
 
   const tabNamen = ["Vertragstyp & Gemeinde", "Projekt & Anlage", "Konditionen", "Ergebnis", "Vertrag"];
 
   // Aktive Klauseln
-  const aktiveKlauseln = vertragstyp === "durchfuehrung" ? dfKlauseln : kbKlauseln;
-  const setAktiveKlauseln = vertragstyp === "durchfuehrung" ? setDfKlauseln : setKbKlauseln;
-  const defaultKlauseln = vertragstyp === "durchfuehrung" ? DURCHFUEHRUNG_KLAUSELN : KOMMUNAL_KLAUSELN;
+  const aktiveKlauseln =
+    vertragstyp === "durchfuehrung" ? dfKlauseln :
+    vertragstyp === "kommunal" ? kbKlauseln : agKlauseln;
+  const setAktiveKlauseln =
+    vertragstyp === "durchfuehrung" ? setDfKlauseln :
+    vertragstyp === "kommunal" ? setKbKlauseln : setAgKlauseln;
+  const defaultKlauseln =
+    vertragstyp === "durchfuehrung" ? DURCHFUEHRUNG_KLAUSELN :
+    vertragstyp === "kommunal" ? KOMMUNAL_KLAUSELN : AUSGLEICH_KLAUSELN;
 
   // DOCX
   const handleDocxExport = async () => {
@@ -118,14 +141,48 @@ export default function BauleitplanungGenerator() {
     try {
       if (vertragstyp === "durchfuehrung") {
         await generateDurchfuehrungsvertragDocx(formData, aktiveKlauseln);
-      } else {
+      } else if (vertragstyp === "kommunal") {
         await generateKommunalbeteiligungDocx(formData, aktiveKlauseln);
+      } else {
+        await generateAusgleichsvertragDocx(formData, aktiveKlauseln);
       }
     } catch (error) {
       alert("DOCX-Fehler: " + error.message);
     }
     setIsGenerating(false);
   };
+
+  // Vertragstyp-Karte Helper
+  const TypKarte = ({ typ, farbe, titel, beschreibung }) => (
+    <div
+      onClick={() => setVertragstyp(typ)}
+      style={{
+        ...styles.card,
+        flex: 1,
+        minWidth: 180,
+        cursor: "pointer",
+        borderLeft: `4px solid ${farbe}`,
+        background: vertragstyp === typ ? farbe + "12" : COLORS.white,
+        outline: vertragstyp === typ ? `2px solid ${farbe}` : "none",
+        transition: "all 0.15s",
+      }}
+    >
+      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
+        {vertragstyp === typ ? "✓ " : ""}{titel}
+      </div>
+      <div style={{ fontSize: 11, color: COLORS.mid }}>{beschreibung}</div>
+    </div>
+  );
+
+  // Vertragstyp-Label
+  const vertragstypLabel =
+    vertragstyp === "durchfuehrung" ? "DURCHFÜHRUNGSVERTRAG § 12 BauGB" :
+    vertragstyp === "kommunal" ? "KOMMUNALBETEILIGUNG § 6 EEG" :
+    "ÖKOLOGISCHER AUSGLEICH § 1a BauGB";
+
+  const vertragstypFarbe =
+    vertragstyp === "durchfuehrung" ? COLORS.yellow :
+    vertragstyp === "kommunal" ? COLORS.green : "#2E7D32";
 
   return (
     <div style={{ maxWidth: 880, margin: "0 auto" }}>
@@ -142,46 +199,24 @@ export default function BauleitplanungGenerator() {
               Wähle den Vertragstyp:
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <div
-                onClick={() => setVertragstyp("durchfuehrung")}
-                style={{
-                  ...styles.card,
-                  flex: 1,
-                  minWidth: 200,
-                  cursor: "pointer",
-                  borderLeft: `4px solid ${COLORS.yellow}`,
-                  background: vertragstyp === "durchfuehrung" ? COLORS.yellow + "12" : COLORS.white,
-                  outline: vertragstyp === "durchfuehrung" ? `2px solid ${COLORS.yellow}` : "none",
-                  transition: "all 0.15s",
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-                  {vertragstyp === "durchfuehrung" ? "✓ " : ""}Durchführungsvertrag
-                </div>
-                <div style={{ fontSize: 11, color: COLORS.mid }}>
-                  § 12 BauGB – Bauleitplanung, Rückbau, Sicherheitsleistungen
-                </div>
-              </div>
-              <div
-                onClick={() => setVertragstyp("kommunal")}
-                style={{
-                  ...styles.card,
-                  flex: 1,
-                  minWidth: 200,
-                  cursor: "pointer",
-                  borderLeft: `4px solid ${COLORS.green}`,
-                  background: vertragstyp === "kommunal" ? COLORS.green + "12" : COLORS.white,
-                  outline: vertragstyp === "kommunal" ? `2px solid ${COLORS.green}` : "none",
-                  transition: "all 0.15s",
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-                  {vertragstyp === "kommunal" ? "✓ " : ""}Kommunalbeteiligung
-                </div>
-                <div style={{ fontSize: 11, color: COLORS.mid }}>
-                  § 6 EEG – Finanzielle Beteiligung an Freiflächenanlagen (0,2 ct/kWh)
-                </div>
-              </div>
+              <TypKarte
+                typ="durchfuehrung"
+                farbe={COLORS.yellow}
+                titel="Durchführungsvertrag"
+                beschreibung="§ 12 BauGB – Bauleitplanung, Rückbau, Sicherheitsleistungen"
+              />
+              <TypKarte
+                typ="kommunal"
+                farbe={COLORS.green}
+                titel="Kommunalbeteiligung"
+                beschreibung="§ 6 EEG – Finanzielle Beteiligung an Freiflächenanlagen (0,2 ct/kWh)"
+              />
+              <TypKarte
+                typ="ausgleich"
+                farbe="#2E7D32"
+                titel="Ökologischer Ausgleich"
+                beschreibung="§ 1a BauGB / § 15 BNatSchG – Ausgleichs- und Ersatzmaßnahmen"
+              />
             </div>
           </Section>
 
@@ -252,7 +287,7 @@ export default function BauleitplanungGenerator() {
                 placeholder="z.B. Krummennaab"
               />
               <TextInput
-                label="Flurstück-Nr."
+                label="Flurstück-Nr. (Anlage)"
                 value={formData.flurstuecke}
                 onChange={update("flurstuecke")}
                 placeholder="z.B. 128, 129"
@@ -356,6 +391,28 @@ export default function BauleitplanungGenerator() {
             )}
           </Section>
 
+          {/* Ausgleichsflächen – nur bei Ausgleichsvertrag */}
+          {vertragstyp === "ausgleich" && (
+            <Section title="Ausgleichsflächen" icon="🌿">
+              <div style={styles.grid2}>
+                <TextInput
+                  label="Flurstück(e) Ausgleich"
+                  value={formData.ausgleichFlurstuecke}
+                  onChange={update("ausgleichFlurstuecke")}
+                  placeholder="z.B. 130, 131/2"
+                />
+                <TextInput
+                  label="Ausgleichsfläche"
+                  value={formData.ausgleichFlaecheHa}
+                  onChange={update("ausgleichFlaecheHa")}
+                  type="number"
+                  suffix="ha"
+                  min={0}
+                />
+              </div>
+            </Section>
+          )}
+
           <NavButtons onPrev={() => setActiveTab(0)} onNext={() => setActiveTab(2)} />
         </>
       )}
@@ -444,7 +501,7 @@ export default function BauleitplanungGenerator() {
                 </div>
               </Section>
             </>
-          ) : (
+          ) : vertragstyp === "kommunal" ? (
             <>
               <Section title="Zuwendung" icon="💰">
                 <div style={styles.grid2}>
@@ -501,6 +558,63 @@ export default function BauleitplanungGenerator() {
                 </div>
               </Section>
             </>
+          ) : (
+            /* Ökologischer Ausgleich */
+            <>
+              <Section title="Maßnahmen" icon="🌱">
+                <p style={{ fontSize: 11, color: COLORS.mid, margin: "0 0 8px" }}>
+                  Beschreibe die geplanten Ausgleichs- und Ersatzmaßnahmen. Diese werden in § 3 des Vertrags übernommen.
+                </p>
+                <textarea
+                  style={{
+                    ...styles.input,
+                    minHeight: 140,
+                    resize: "vertical",
+                    fontSize: 12.5,
+                    lineHeight: 1.5,
+                  }}
+                  value={formData.massnahmenText}
+                  onChange={(e) => update("massnahmenText")(e.target.value)}
+                  placeholder="z.B. a) Extensivgrünland unter Modulreihen..."
+                />
+              </Section>
+
+              <Section title="Sicherheitsleistung & Pflege" icon="🏦">
+                <div style={styles.grid2}>
+                  <TextInput
+                    label="Bürgschaft ökologischer Ausgleich"
+                    value={formData.buergschaftAusgleich}
+                    onChange={update("buergschaftAusgleich")}
+                    type="number"
+                    suffix="€"
+                    min={0}
+                  />
+                  <TextInput
+                    label="Pflegedauer nach Rückbau"
+                    value={formData.pflegedauerJahre}
+                    onChange={update("pflegedauerJahre")}
+                    type="number"
+                    suffix="Jahre"
+                    min={1}
+                    max={30}
+                  />
+                </div>
+                <div style={{ ...styles.grid2, marginTop: 8 }}>
+                  <SelectInput
+                    label="Monitoring-Intervall"
+                    value={formData.monitoringIntervall}
+                    onChange={update("monitoringIntervall")}
+                    options={["jährlich", "halbjährlich", "alle 2 Jahre", "alle 3 Jahre"]}
+                  />
+                  <TextInput
+                    label="Frist Umsetzung Maßnahmen"
+                    value={formData.fristUmsetzung}
+                    onChange={update("fristUmsetzung")}
+                    placeholder="z.B. spätestens 12 Monate nach IBN"
+                  />
+                </div>
+              </Section>
+            </>
           )}
 
           <NavButtons onPrev={() => setActiveTab(1)} onNext={() => setActiveTab(3)} nextLabel="Ergebnis →" />
@@ -512,13 +626,7 @@ export default function BauleitplanungGenerator() {
       {/* ============================================================ */}
       {activeTab === 3 && (
         <>
-          <ResultBox
-            label={
-              vertragstyp === "durchfuehrung"
-                ? "DURCHFÜHRUNGSVERTRAG § 12 BauGB"
-                : "KOMMUNALBETEILIGUNG § 6 EEG"
-            }
-          >
+          <ResultBox label={vertragstypLabel}>
             <ResultGrid>
               {vertragstyp === "durchfuehrung" ? (
                 <>
@@ -533,7 +641,7 @@ export default function BauleitplanungGenerator() {
                     sub="Pauschale Bauleitplanverfahren"
                   />
                 </>
-              ) : (
+              ) : vertragstyp === "kommunal" ? (
                 <>
                   <ResultCell
                     label="Zuwendung / Jahr"
@@ -546,6 +654,19 @@ export default function BauleitplanungGenerator() {
                     sub="Geschätzte Gesamtzuwendung"
                   />
                 </>
+              ) : (
+                <>
+                  <ResultCell
+                    label="Bürgschaft Ausgleich"
+                    amount={buergschaftAusgleich > 0 ? formatEuro(buergschaftAusgleich) : "– €"}
+                    sub={`Pflegedauer: ${formData.pflegedauerJahre || "5"} Jahre`}
+                  />
+                  <ResultCell
+                    label="Ausgleichsfläche"
+                    amount={`${formData.ausgleichFlaecheHa || "–"} ha`}
+                    sub={`Fl.Nr. ${formData.ausgleichFlurstuecke || "–"}`}
+                  />
+                </>
               )}
             </ResultGrid>
           </ResultBox>
@@ -556,7 +677,7 @@ export default function BauleitplanungGenerator() {
             <DetailRow label="Gemeinde" value={formData.gemeindeName || "–"} />
             <DetailRow label="Vertreten durch" value={`${formData.buergermeisterTitel || ""} ${formData.buergermeisterName || "–"}`} />
             <div style={{ height: 2, background: COLORS.yellow, margin: "5px 0" }} />
-            <DetailRow label={vertragstyp === "durchfuehrung" ? "Vorhabenträger" : "Betreiber"} value="Elite PV GmbH" />
+            <DetailRow label={vertragstyp === "kommunal" ? "Betreiber" : "Vorhabenträger"} value="Elite PV GmbH" />
           </div>
 
           {/* Projektdaten */}
@@ -573,7 +694,8 @@ export default function BauleitplanungGenerator() {
           {/* Konditionen */}
           <div style={{ ...styles.card, marginTop: 12 }}>
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
-              {vertragstyp === "durchfuehrung" ? "Sicherheitsleistungen" : "Zuwendungen"}
+              {vertragstyp === "durchfuehrung" ? "Sicherheitsleistungen" :
+               vertragstyp === "kommunal" ? "Zuwendungen" : "Ausgleich & Pflege"}
             </div>
             {vertragstyp === "durchfuehrung" ? (
               <>
@@ -582,7 +704,7 @@ export default function BauleitplanungGenerator() {
                 <DetailRow label="Verwaltungskosten" value={formatEuro(verwaltungskosten)} />
                 <DetailRow label="Frist B-Plan" value={formData.fristRechtsverbindlich || "–"} />
               </>
-            ) : (
+            ) : vertragstyp === "kommunal" ? (
               <>
                 <DetailRow label="Zuwendungssatz" value={`${centProKwh} ct/kWh`} />
                 <DetailRow label="Jahresstrommenge" value={jahresstrommenge > 0 ? `${formatZahl(jahresstrommenge, 0)} kWh` : "–"} />
@@ -590,8 +712,28 @@ export default function BauleitplanungGenerator() {
                 <DetailRow label={`Summe ${laufzeitJahre} J.`} value={gesamtzuwendung > 0 ? formatEuro(gesamtzuwendung) : "–"} highlight />
                 <DetailRow label="Laufzeit" value={`${laufzeitJahre} Jahre`} />
               </>
+            ) : (
+              <>
+                <DetailRow label="Ausgleichsflächen" value={`Fl.Nr. ${formData.ausgleichFlurstuecke || "–"}`} />
+                <DetailRow label="Ausgleichsfläche" value={`ca. ${formData.ausgleichFlaecheHa || "–"} ha`} />
+                <DetailRow label="Bürgschaft Ausgleich" value={buergschaftAusgleich > 0 ? formatEuro(buergschaftAusgleich) : "–"} highlight />
+                <DetailRow label="Pflegedauer" value={`${formData.pflegedauerJahre || "5"} Jahre nach Rückbau`} />
+                <DetailRow label="Monitoring" value={formData.monitoringIntervall || "jährlich"} />
+                <DetailRow label="Frist Umsetzung" value={formData.fristUmsetzung || "–"} />
+                <DetailRow label="UNB" value={`Landratsamt ${formData.landkreis || "–"}`} />
+              </>
             )}
           </div>
+
+          {/* Maßnahmen-Vorschau bei Ausgleich */}
+          {vertragstyp === "ausgleich" && formData.massnahmenText && (
+            <div style={{ ...styles.card, marginTop: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Maßnahmen</div>
+              <div style={{ fontSize: 12, color: COLORS.dark, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
+                {formData.massnahmenText}
+              </div>
+            </div>
+          )}
 
           {exportGesperrt && (
             <div style={{ ...styles.warnung, textAlign: "center", marginTop: 8 }}>
@@ -613,9 +755,9 @@ export default function BauleitplanungGenerator() {
         <>
           <Section
             title={
-              vertragstyp === "durchfuehrung"
-                ? "Durchführungsvertrag bearbeiten"
-                : "Kommunalbeteiligung bearbeiten"
+              vertragstyp === "durchfuehrung" ? "Durchführungsvertrag bearbeiten" :
+              vertragstyp === "kommunal" ? "Kommunalbeteiligung bearbeiten" :
+              "Ausgleichsvertrag bearbeiten"
             }
             icon="📝"
           >
@@ -623,16 +765,18 @@ export default function BauleitplanungGenerator() {
               style={{
                 marginBottom: 12,
                 padding: "8px 12px",
-                background: vertragstyp === "durchfuehrung" ? COLORS.yellow + "15" : COLORS.green + "15",
+                background: vertragstypFarbe + "15",
                 borderRadius: 6,
                 fontSize: 12,
                 color: COLORS.dark,
-                border: `1px solid ${vertragstyp === "durchfuehrung" ? COLORS.yellow + "40" : COLORS.green + "40"}`,
+                border: `1px solid ${vertragstypFarbe}40`,
               }}
             >
               {vertragstyp === "durchfuehrung"
                 ? "📋 Durchführungsvertrag nach § 12 BauGB"
-                : "📋 Kommunalbeteiligung gemäß § 6 Abs. 1 Nr. 2 EEG"}
+                : vertragstyp === "kommunal"
+                ? "📋 Kommunalbeteiligung gemäß § 6 Abs. 1 Nr. 2 EEG"
+                : "📋 Ökologischer Ausgleichsvertrag gemäß § 1a BauGB i.V.m. § 15 BNatSchG"}
             </div>
             <ClauseEditor
               klauseln={aktiveKlauseln}

@@ -46,6 +46,14 @@ function ersetzePlatzhalter(text, daten) {
     "{IBAN}": daten.iban || "_______________",
     "{BIC}": daten.bic || "_______________",
     "{BANK}": daten.bank || "_______________",
+    // Ökologischer Ausgleich
+    "{AUSGLEICH_FLURSTUECKE}": daten.ausgleichFlurstuecke || "___",
+    "{AUSGLEICH_FLAECHE_HA}": daten.ausgleichFlaecheHa || "___",
+    "{MASSNAHMEN_TEXT}": daten.massnahmenText || "(Maßnahmen gemäß Grünordnungsplan)",
+    "{FRIST_UMSETZUNG}": daten.fristUmsetzung || "___",
+    "{PFLEGEDAUER_JAHRE}": daten.pflegedauerJahre || "5",
+    "{MONITORING_INTERVALL}": daten.monitoringIntervall || "jährlich",
+    "{BUERGSCHAFT_AUSGLEICH}": daten.buergschaftAusgleich || "___",
   };
   let result = text;
   for (const [key, val] of Object.entries(map)) {
@@ -95,6 +103,16 @@ function buildPlatzhalterDaten(formData) {
     iban: d.iban || "___",
     bic: d.bic || "___",
     bank: d.bank || "___",
+    // Ökologischer Ausgleich
+    ausgleichFlurstuecke: d.ausgleichFlurstuecke || "___",
+    ausgleichFlaecheHa: d.ausgleichFlaecheHa || "___",
+    massnahmenText: d.massnahmenText || "(Maßnahmen gemäß Grünordnungsplan)",
+    fristUmsetzung: d.fristUmsetzung || "___",
+    pflegedauerJahre: d.pflegedauerJahre || "5",
+    monitoringIntervall: d.monitoringIntervall || "jährlich",
+    buergschaftAusgleich: d.buergschaftAusgleich
+      ? formatEuro(parseFloat(d.buergschaftAusgleich) || 0)
+      : "___",
   };
 }
 
@@ -343,5 +361,162 @@ export async function generateKommunalbeteiligungDocx(formData, klauseln) {
     klauseln: ersetzte,
     signatureParties: ["Elite PV GmbH (Betreiber)", `${gemeindeName}\n${formData.buergermeisterName || "Bürgermeister/in"}`],
     fileName: `Kommunalbeteiligung_${(formData.projektName || "FFA").replace(/[\s,]+/g, "_")}_${gemeindeName.replace(/[\s,]+/g, "_")}.docx`,
+  });
+}
+
+// ============================================================
+// ÖKOLOGISCHER AUSGLEICH EXPORT
+// ============================================================
+export async function generateAusgleichsvertragDocx(formData, klauseln) {
+  const ph = buildPlatzhalterDaten(formData);
+  const buergschaftAusgleich = parseFloat(formData.buergschaftAusgleich) || 0;
+
+  const sections = [];
+
+  // Deckblatt
+  sections.push({ type: "spacing", size: 300 });
+  sections.push({
+    type: "paragraphs",
+    items: [
+      new Paragraph({
+        spacing: { after: 150 },
+        children: [
+          new TextRun({ text: "VERTRAG ÜBER ÖKOLOGISCHE", bold: true, size: 40, font: "DM Sans", color: "1C1C1C" }),
+        ],
+      }),
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [
+          new TextRun({ text: "AUSGLEICHS- UND ERSATZMAßNAHMEN", bold: true, size: 40, font: "DM Sans", color: "1C1C1C" }),
+        ],
+      }),
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [
+          new TextRun({ text: "gemäß § 1a BauGB i.V.m. § 15 BNatSchG", size: 24, font: "DM Sans", color: "888888" }),
+        ],
+      }),
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [
+          new TextRun({ text: `Freiflächen-PV-Anlage „${formData.projektName || "___"}"`, size: 24, font: "DM Sans", color: "888888" }),
+        ],
+      }),
+      new Paragraph({
+        spacing: { after: 300 },
+        children: [
+          new TextRun({ text: `der ${formData.gemeindeName || "Gemeinde ___"}`, size: 24, font: "DM Sans", color: "888888" }),
+        ],
+      }),
+    ],
+  });
+
+  // Vertragsparteien
+  sections.push({ type: "heading", text: "Vertragsparteien" });
+  sections.push({
+    type: "keyValue",
+    entries: [
+      ["Gemeinde", formData.gemeindeName || "–"],
+      ["Adresse", `${formData.gemeindeStrasse || "–"}, ${formData.gemeindePlz || ""} ${formData.gemeindeOrt || ""}`],
+      ["Vertreten durch", `${formData.buergermeisterTitel || "Erste/r Bürgermeister/in"}, ${formData.buergermeisterName || "–"}`],
+      ["", ""],
+      ["Vorhabenträger", "Elite PV GmbH"],
+      ["Adresse", "Lindenhof 4b, 92670 Windischeschenbach"],
+      ["Vertreten durch", "Levin Schober, Geschäftsführer"],
+    ],
+  });
+  sections.push({ type: "spacing", size: 200 });
+
+  // Vorhabendaten
+  sections.push({ type: "heading", text: "Vorhaben" });
+  sections.push({
+    type: "keyValue",
+    entries: [
+      ["Projekt", formData.projektName || "–"],
+      ["Gemarkung", formData.gemarkung || "–"],
+      ["Anlagen-Flurstücke", formData.flurstuecke || "–"],
+      ["Anlagenfläche", `ca. ${formData.grundstuecksflaecheHa || "–"} ha`],
+      ["Leistung", `ca. ${formData.leistungKwp || "–"} kWp`],
+    ],
+  });
+  sections.push({ type: "spacing", size: 150 });
+
+  // Ausgleichsflächen
+  sections.push({ type: "heading", text: "Ausgleichsflächen" });
+  sections.push({
+    type: "keyValue",
+    entries: [
+      ["Flurstück(e)", formData.ausgleichFlurstuecke || "–"],
+      ["Gesamtfläche", `ca. ${formData.ausgleichFlaecheHa || "–"} ha`],
+      ["Gemarkung", formData.gemarkung || "–"],
+      ["Zuständige UNB", `Landratsamt ${formData.landkreis || "–"}`],
+    ],
+  });
+  sections.push({ type: "spacing", size: 150 });
+
+  // Maßnahmen-Übersicht
+  if (formData.massnahmenText) {
+    sections.push({ type: "heading", text: "Maßnahmen-Übersicht" });
+    sections.push({
+      type: "paragraphs",
+      items: [
+        new Paragraph({
+          spacing: { after: 100 },
+          children: [
+            new TextRun({ text: formData.massnahmenText, size: 20, font: "DM Sans", color: "444444" }),
+          ],
+        }),
+      ],
+    });
+    sections.push({ type: "spacing", size: 150 });
+  }
+
+  // Sicherheitsleistung & Pflege
+  sections.push({ type: "heading", text: "Sicherheitsleistung & Pflege" });
+  sections.push({
+    type: "table",
+    headers: ["Position", "Wert"],
+    rows: [
+      ["Bürgschaft Ausgleich", buergschaftAusgleich > 0 ? formatEuro(buergschaftAusgleich) : "–"],
+      ["Pflegedauer", `${formData.pflegedauerJahre || "5"} Jahre nach Rückbau`],
+      ["Monitoring", formData.monitoringIntervall || "jährlich"],
+      ["Frist Umsetzung", formData.fristUmsetzung || "–"],
+    ],
+  });
+  sections.push({ type: "spacing", size: 150 });
+
+  sections.push({
+    type: "highlight",
+    label: "Bürgschaft ökologischer Ausgleich",
+    mainText: buergschaftAusgleich > 0 ? formatEuro(buergschaftAusgleich) : "– €",
+    subText: `Pflegedauer: ${formData.pflegedauerJahre || "5"} Jahre | Monitoring: ${formData.monitoringIntervall || "jährlich"}`,
+  });
+  sections.push({ type: "spacing", size: 200 });
+
+  // Seitenumbruch
+  sections.push({ type: "pageBreak" });
+
+  // Klauseln
+  const ersetzte = klauseln.map((k) => ({
+    ...k,
+    text: ersetzePlatzhalter(k.text, ph),
+  }));
+
+  const standParagraph = new Paragraph({
+    spacing: { before: 400 },
+    children: [
+      new TextRun({ text: `Stand: ${formatDatum(new Date())}`, size: 18, font: "DM Sans", color: "888888", italics: true }),
+    ],
+  });
+
+  const gemeindeName = formData.gemeindeName || "Gemeinde";
+
+  await generateDocx({
+    title: "ÖKOLOGISCHER AUSGLEICHSVERTRAG",
+    subtitle: `${formData.projektName || "PV-Anlage"} | ${gemeindeName} | Elite PV GmbH`,
+    sections: [...sections, { type: "paragraphs", items: [standParagraph] }],
+    klauseln: ersetzte,
+    signatureParties: [`${gemeindeName}\n${formData.buergermeisterName || "Bürgermeister/in"}`, "Elite PV GmbH\nLevin Schober"],
+    fileName: `Ausgleichsvertrag_${(formData.projektName || "PV").replace(/[\s,]+/g, "_")}_${gemeindeName.replace(/[\s,]+/g, "_")}.docx`,
   });
 }

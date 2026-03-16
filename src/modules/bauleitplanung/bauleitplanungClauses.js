@@ -1,8 +1,9 @@
 // ============================================================
 // BAULEITPLANUNG – Vertragsklauseln
-// Zwei Vertragstypen:
+// Drei Vertragstypen:
 //   1. Durchführungsvertrag (§ 12 BauGB)
 //   2. Kommunalbeteiligung (§ 6 EEG)
+//   3. Ökologischer Ausgleich (§ 1a BauGB / § 15 BNatSchG)
 // ============================================================
 
 // ============================================================
@@ -287,5 +288,165 @@ Der ausschließliche Gerichtsstand ist der Sitz der Gemeinde.
 
 Ergänzend zu diesem Vertrag ist folgende Anlage beigefügt:
 Anlage „Standort und Parameter der Freiflächenanlagen (FFAen)"`,
+  },
+];
+
+// ============================================================
+// TYP 3: ÖKOLOGISCHER AUSGLEICH (§ 1a BauGB / § 15 BNatSchG)
+// ============================================================
+export const AUSGLEICH_KLAUSELN = [
+  {
+    id: "ag1",
+    titel: "§ 1 Vertragsgegenstand und Rechtsgrundlage",
+    text: `(1) Gegenstand dieses Vertrags ist die Durchführung von Kompensationsmaßnahmen zum Ausgleich und Ersatz der durch die Errichtung und den Betrieb der Freiflächen-Photovoltaikanlage „{PROJEKT_NAME}" auf den Grundstücken der Gemarkung {GEMARKUNG}, Fl.Nrn. {FLURSTUECKE}, verursachten Eingriffe in Natur und Landschaft gemäß § 1a Abs. 3 BauGB i.V.m. § 15 BNatSchG und der Bayerischen Kompensationsverordnung (BayKompV).
+
+(2) Die Art und der Umfang der Ausgleichs- und Ersatzmaßnahmen ergeben sich aus dem Umweltbericht zum vorhabenbezogenen Bebauungsplan „{PROJEKT_NAME}" sowie aus dem Grünordnungsplan (Anlage 1 zu diesem Vertrag). Die darin festgesetzten Maßnahmen sind Bestandteil dieses Vertrags.
+
+(3) Der Vorhabenträger verpflichtet sich, sämtliche in der Anlage 1 festgesetzten Ausgleichs- und Ersatzmaßnahmen auf eigene Kosten durchzuführen, zu pflegen und dauerhaft zu erhalten.`,
+  },
+  {
+    id: "ag2",
+    titel: "§ 2 Ausgleichsflächen",
+    text: `(1) Die Ausgleichs- und Ersatzmaßnahmen werden auf folgenden Flächen durchgeführt:
+
+Gemarkung {GEMARKUNG}, Flurstück(e) {AUSGLEICH_FLURSTUECKE}
+Gesamtfläche der Ausgleichsflächen: ca. {AUSGLEICH_FLAECHE_HA} ha
+
+(2) Der Vorhabenträger weist nach, dass er über die genannten Ausgleichsflächen für die Dauer der Verpflichtungen aus diesem Vertrag verfügungsberechtigt ist (Eigentum, Pacht oder dinglich gesichertes Nutzungsrecht). Ein entsprechender Nachweis ist der Gemeinde vor Baubeginn der PV-Anlage vorzulegen.
+
+(3) Die Ausgleichsflächen sind im Grünordnungsplan (Anlage 1) zeichnerisch dargestellt. Geringfügige Anpassungen der Flächenzuschnitte sind in Abstimmung mit der Unteren Naturschutzbehörde des Landratsamts {LANDKREIS} zulässig, soweit Umfang und ökologische Wertigkeit der Maßnahmen nicht gemindert werden.`,
+  },
+  {
+    id: "ag3",
+    titel: "§ 3 Maßnahmenkatalog",
+    text: `(1) Der Vorhabenträger verpflichtet sich zur Durchführung folgender Ausgleichs- und Ersatzmaßnahmen:
+
+{MASSNAHMEN_TEXT}
+
+(2) Vorgezogene Ausgleichsmaßnahmen (CEF-Maßnahmen), die zum Schutz besonders oder streng geschützter Arten erforderlich sind, müssen vor Baubeginn der PV-Anlage wirksam umgesetzt sein. Die Wirksamkeit ist gegenüber der Unteren Naturschutzbehörde nachzuweisen.
+
+(3) Die Maßnahmen innerhalb des Anlagenzauns (z.B. Extensivgrünland unter Modulen, Blühstreifen zwischen Modulreihen) sind integraler Bestandteil der Ausgleichskonzeption. Eine Verschlechterung dieser anlagenbezogenen Maßnahmen durch Betrieb oder Wartung ist zu vermeiden.
+
+(4) Die Detailplanung der Maßnahmen ist vor Baubeginn mit der Unteren Naturschutzbehörde des Landratsamts {LANDKREIS} abzustimmen und von dieser zu genehmigen.`,
+  },
+  {
+    id: "ag4",
+    titel: "§ 4 Zeitplan und Durchführung",
+    text: `(1) Die Ausgleichs- und Ersatzmaßnahmen sind spätestens bis {FRIST_UMSETZUNG} umzusetzen, sofern im Grünordnungsplan oder in der naturschutzfachlichen Stellungnahme keine abweichenden Fristen festgelegt sind.
+
+(2) CEF-Maßnahmen und Schutzmaßnahmen sind vor Beginn der jeweiligen Bauphase abzuschließen und der Unteren Naturschutzbehörde zur Abnahme anzuzeigen.
+
+(3) Alle übrigen Ausgleichsmaßnahmen sind in der ersten Vegetationsperiode nach Inbetriebnahme der PV-Anlage abzuschließen.
+
+(4) Der Vorhabenträger hat den Beginn und die Fertigstellung der einzelnen Maßnahmen der Gemeinde und der Unteren Naturschutzbehörde schriftlich anzuzeigen.`,
+  },
+  {
+    id: "ag5",
+    titel: "§ 5 Pflege und Unterhaltung",
+    text: `(1) Der Vorhabenträger verpflichtet sich, die Ausgleichsflächen und Ausgleichsmaßnahmen für die gesamte Dauer des Betriebs der PV-Anlage zuzüglich einer Nachsorgephase von {PFLEGEDAUER_JAHRE} Jahren nach Rückbau ordnungsgemäß zu pflegen und zu unterhalten.
+
+(2) Die Pflege umfasst insbesondere:
+a) Extensivgrünland: Mahd 1–2× jährlich (frühestens ab 15. Juni), Mähgut ist abzuräumen, keine Düngung, kein Einsatz von Pflanzenschutzmitteln
+b) Hecken- und Gehölzpflanzungen: Ausfallkontrolle und Nachpflanzung bis zur gesicherten Anwachsphase (mind. 3 Jahre), abschnittsweiser Rückschnitt alle 10–15 Jahre
+c) Blühflächen/Brachestreifen: Pflegeschnitt 1× jährlich im Spätherbst, Neuansaat bei Qualitätsverlust
+d) Gewässer/Feuchtflächen: Freihalten von Verbuschung, Unterhaltung der Uferbereiche
+
+(3) Der Vorhabenträger kann die Pflege auf qualifizierte Dritte (z.B. Landschaftspflegeverbände, örtliche Landwirte) übertragen. Die Verantwortlichkeit verbleibt beim Vorhabenträger.
+
+(4) Ändert sich der ökologische Zustand der Ausgleichsflächen wesentlich (z.B. durch Extremwetter, invasive Arten), hat der Vorhabenträger in Abstimmung mit der Unteren Naturschutzbehörde geeignete Gegenmaßnahmen zu ergreifen.`,
+  },
+  {
+    id: "ag6",
+    titel: "§ 6 Monitoring und Dokumentation",
+    text: `(1) Der Vorhabenträger ist verpflichtet, die Entwicklung der Ausgleichsflächen durch ein fachkundiges Büro {MONITORING_INTERVALL} dokumentieren zu lassen (Monitoring). Das Monitoring umfasst insbesondere:
+a) Fotodokumentation der Ausgleichsflächen (Festpunktfotos)
+b) Vegetationsaufnahme und Bewertung der Zielartenvorkommen
+c) Dokumentation der durchgeführten Pflegemaßnahmen
+d) Bewertung des Maßnahmenerfolgs und ggf. Anpassungsempfehlungen
+
+(2) Der Monitoringbericht ist der Gemeinde und der Unteren Naturschutzbehörde des Landratsamts {LANDKREIS} jeweils bis zum 31.12. des Berichtsjahres vorzulegen.
+
+(3) Das Monitoring ist für die Dauer der Pflegeverpflichtung gemäß § 5 durchzuführen. In den ersten 5 Jahren nach Herstellung erfolgt das Monitoring jährlich, danach kann der Turnus in Abstimmung mit der Unteren Naturschutzbehörde auf alle 3 Jahre verlängert werden.
+
+(4) Die Kosten des Monitorings trägt der Vorhabenträger.`,
+  },
+  {
+    id: "ag7",
+    titel: "§ 7 Sicherheitsleistung",
+    text: `(1) Zur Sicherung der Durchführung und dauerhaften Pflege der Ausgleichs- und Ersatzmaßnahmen hinterlegt der Vorhabenträger bei der Gemeinde vor Baubeginn eine selbstschuldnerische und unbefristete Bankbürgschaft eines deutschen Kreditinstituts in Höhe von {BUERGSCHAFT_AUSGLEICH} €.
+
+(2) Der Bürgschaftsbetrag bemisst sich an den geschätzten Kosten für die Herstellung der Ausgleichsmaßnahmen sowie deren Pflege für die Dauer von {PFLEGEDAUER_JAHRE} Jahren. Eine Anpassung der Bürgschaftshöhe kann im Einvernehmen beider Vertragsparteien erfolgen.
+
+(3) Die Sicherheitsleistung wird nach Ablauf der Pflegeverpflichtung und nach erfolgreicher Abnahme der Ausgleichsflächen durch die Untere Naturschutzbehörde zurückgegeben.
+
+(4) Die Gemeinde ist berechtigt, die Bürgschaft in Anspruch zu nehmen, wenn der Vorhabenträger seinen Verpflichtungen aus diesem Vertrag trotz schriftlicher Mahnung mit angemessener Fristsetzung (mindestens 3 Monate) nicht nachkommt.`,
+  },
+  {
+    id: "ag8",
+    titel: "§ 8 Kostentragung",
+    text: `(1) Sämtliche Kosten für Planung, Herstellung, Pflege, Monitoring und Dokumentation der Ausgleichs- und Ersatzmaßnahmen trägt der Vorhabenträger.
+
+(2) Dies umfasst auch die Kosten für:
+a) Erstellung des Grünordnungsplans und naturschutzfachlicher Gutachten
+b) Saatgut, Pflanzgut und sonstige Materialien
+c) Beauftragung von Fachfirmen für Herstellung und Pflege
+d) Monitoringberichte durch Fachbüros
+e) Eventuelle Nachbesserungen oder Anpassungen der Maßnahmen
+
+(3) Die Gemeinde ist von sämtlichen Kosten im Zusammenhang mit den Ausgleichsmaßnahmen freizustellen.`,
+  },
+  {
+    id: "ag9",
+    titel: "§ 9 Kontrollrecht",
+    text: `(1) Die Gemeinde und die Untere Naturschutzbehörde des Landratsamts {LANDKREIS} sind berechtigt, die Ausgleichsflächen jederzeit – nach vorheriger Ankündigung mit angemessener Frist – zu betreten und den Zustand der Maßnahmen zu überprüfen.
+
+(2) Der Vorhabenträger hat den Kontrolleuren ungehinderten Zugang zu den Ausgleichsflächen zu gewähren und auf Verlangen die Pflegedokumentation vorzulegen.
+
+(3) Werden bei einer Kontrolle Mängel festgestellt, setzt die Gemeinde dem Vorhabenträger eine angemessene Frist zur Nachbesserung. Kommt der Vorhabenträger der Nachbesserung nicht nach, kann die Gemeinde die Maßnahmen im Wege der Ersatzvornahme auf Kosten des Vorhabenträgers durchführen lassen.`,
+  },
+  {
+    id: "ag10",
+    titel: "§ 10 Vertragsstrafe bei Nichterfüllung",
+    text: `(1) Kommt der Vorhabenträger seinen Verpflichtungen zur Herstellung der Ausgleichsmaßnahmen nicht innerhalb der in § 4 genannten Fristen nach, ist die Gemeinde berechtigt, eine Vertragsstrafe in Höhe von 10 % des Bürgschaftsbetrags gemäß § 7 Abs. 1 für jeden angefangenen Monat des Verzugs zu verlangen, höchstens jedoch den einfachen Bürgschaftsbetrag insgesamt.
+
+(2) Die Geltendmachung der Vertragsstrafe lässt weitergehende Ansprüche der Gemeinde auf Erfüllung und Schadensersatz unberührt.
+
+(3) Weist der Vorhabenträger nach, dass die Verzögerung auf Umstände zurückzuführen ist, die er nicht zu vertreten hat (z.B. höhere Gewalt, behördliche Verzögerungen), entfällt die Vertragsstrafe für die Dauer dieser Umstände.`,
+  },
+  {
+    id: "ag11",
+    titel: "§ 11 Veräußerung und Rechtsnachfolge",
+    text: `(1) Im Falle der Veräußerung der PV-Anlage oder der Übertragung der Betreiberstellung ist der Vorhabenträger verpflichtet, sämtliche Rechte und Pflichten aus diesem Vertrag auf den Rechtsnachfolger zu übertragen und dies gegenüber der Gemeinde schriftlich nachzuweisen.
+
+(2) Der Vorhabenträger haftet gesamtschuldnerisch neben dem Rechtsnachfolger, bis die Gemeinde den Eintritt des Rechtsnachfolgers in diesen Vertrag schriftlich bestätigt.
+
+(3) Im Falle der Veräußerung der Ausgleichsflächen hat der Vorhabenträger sicherzustellen, dass die Ausgleichsverpflichtungen dinglich gesichert sind oder der neue Eigentümer in die Pflege- und Duldungspflichten eintritt.`,
+  },
+  {
+    id: "ag12",
+    titel: "§ 12 Vertragsdauer und Beendigung",
+    text: `(1) Dieser Vertrag tritt mit beiderseitiger Unterzeichnung in Kraft und gilt für die gesamte Dauer des Betriebs der PV-Anlage „{PROJEKT_NAME}" zuzüglich der Nachsorgephase gemäß § 5 Abs. 1.
+
+(2) Bei vorzeitigem Rückbau der PV-Anlage bleiben die Pflege- und Monitoringpflichten für die in § 5 Abs. 1 genannte Nachsorgephase bestehen.
+
+(3) Eine ordentliche Kündigung dieses Vertrags durch den Vorhabenträger ist ausgeschlossen, solange die PV-Anlage betrieben wird oder die Nachsorgephase läuft.
+
+(4) Beide Parteien können den Vertrag aus wichtigem Grund kündigen. Ein wichtiger Grund für die Gemeinde liegt insbesondere vor, wenn der Vorhabenträger seine Ausgleichsverpflichtungen trotz zweimaliger Mahnung dauerhaft nicht erfüllt.`,
+  },
+  {
+    id: "ag13",
+    titel: "§ 13 Schlussbestimmungen",
+    text: `(1) Änderungen und Ergänzungen dieses Vertrags bedürfen der Schriftform. Dies gilt auch für die Aufhebung des Schriftformerfordernisses.
+
+(2) Sollten einzelne Bestimmungen dieses Vertrags unwirksam sein oder werden, so bleibt die Wirksamkeit der übrigen Bestimmungen unberührt. Die Parteien verpflichten sich, unwirksame Bestimmungen durch solche zu ersetzen, die dem wirtschaftlichen und ökologischen Zweck der unwirksamen Bestimmung am nächsten kommen.
+
+(3) Gerichtsstand ist der Sitz der Gemeinde.
+
+(4) Anlagen zu diesem Vertrag:
+- Anlage 1: Grünordnungsplan mit Darstellung der Ausgleichsflächen und Maßnahmen
+- Anlage 2: Nachweis der Verfügungsberechtigung über die Ausgleichsflächen
+- Anlage 3: Detaillierter Pflegeplan
+
+(5) Dieser Vertrag wird in zwei Ausfertigungen erstellt. Jede Vertragspartei erhält eine Ausfertigung.`,
   },
 ];
