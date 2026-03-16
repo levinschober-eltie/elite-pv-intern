@@ -12,6 +12,7 @@ import {
   NEIGUNG_RICHTUNGEN,
   VERMARKTUNGSARTEN,
   AUSGLEICH_TYPEN,
+  PRIVILEGIERUNG_OPTIONEN,
 } from "./freiflaecheCalc";
 import { FREIFLAECHE_KLAUSELN } from "./freiflaecheClauses";
 import { getKlauseln } from "../../lib/klauselStore";
@@ -166,6 +167,8 @@ export default function FreiflaecheGenerator() {
     vermarktungsart: "EEG-Ausschreibung",
     einspeiseverguetung: 5.5,
     nvpEntfernungKm: 2,
+    privilegierung: "Nicht privilegiert",
+    pachtflaecheHa: 0,
   });
 
   const updateBewertung = (key) => (value) => {
@@ -174,6 +177,10 @@ export default function FreiflaecheGenerator() {
 
   const update = (key) => (value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+    // Pachtfläche auch in Bewertung synchronisieren
+    if (key === "pachtflaecheHa") {
+      setBewertung((prev) => ({ ...prev, pachtflaecheHa: parseFloat(value) || 0 }));
+    }
   };
 
   // Fair-Score (live berechnet)
@@ -495,6 +502,12 @@ export default function FreiflaecheGenerator() {
           {/* Grundstücks-Parameter */}
           <Section title="Grundstücks-Parameter" icon="📐">
             <div style={styles.grid2}>
+              <SelectInput
+                label="Privilegierung / Planungsrecht"
+                value={bewertung.privilegierung}
+                onChange={updateBewertung("privilegierung")}
+                options={PRIVILEGIERUNG_OPTIONEN}
+              />
               <TextInput
                 label="GRZ (Grundflächenzahl)"
                 value={bewertung.grz}
@@ -504,20 +517,22 @@ export default function FreiflaecheGenerator() {
                 max={1}
                 placeholder="z.B. 0.6"
               />
+            </div>
+            <div style={{ ...styles.grid2, marginTop: 10 }}>
               <SelectInput
                 label="Pachtstatus"
                 value={bewertung.pachtstatus}
                 onChange={updateBewertung("pachtstatus")}
                 options={PACHTSTATUS_OPTIONEN}
               />
-            </div>
-            <div style={{ ...styles.grid2, marginTop: 10 }}>
               <SelectInput
                 label="Baum-/Buschbesatz"
                 value={bewertung.bewuchs}
                 onChange={updateBewertung("bewuchs")}
                 options={BEWUCHS_OPTIONEN}
               />
+            </div>
+            <div style={{ ...styles.grid2, marginTop: 10 }}>
               <div>
                 <label style={styles.label}>Lagerplatz vorhanden</label>
                 <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -537,7 +552,35 @@ export default function FreiflaecheGenerator() {
                   </button>
                 </div>
               </div>
+              <div>
+                <label style={styles.label}>Pachtfläche (aus Tab "Fläche")</label>
+                <div style={{
+                  padding: "7px 9px",
+                  background: COLORS.light,
+                  borderRadius: 6,
+                  border: "1.5px solid #ddd",
+                  fontSize: 13.5,
+                  color: bewertung.pachtflaecheHa > 0 ? COLORS.dark : COLORS.mid,
+                  fontWeight: 600,
+                }}>
+                  {bewertung.pachtflaecheHa > 0 ? `${bewertung.pachtflaecheHa} ha` : "Noch nicht eingetragen"}
+                </div>
+                <div style={{ fontSize: 10, color: COLORS.mid, marginTop: 2 }}>
+                  {bewertung.pachtflaecheHa >= 10
+                    ? "Große Fläche – Planungskosten verteilen sich gut"
+                    : bewertung.pachtflaecheHa >= 3
+                    ? "Mittlere Fläche"
+                    : bewertung.pachtflaecheHa > 0
+                    ? "Kleine Fläche – gleicher Planungsaufwand bei weniger Ertrag"
+                    : "Bitte im Tab \"Fläche & Technik\" eintragen"}
+                </div>
+              </div>
             </div>
+            {bewertung.privilegierung === "Nicht privilegiert" && (
+              <div style={{ ...styles.warnung, marginTop: 10 }}>
+                Ohne Privilegierung oder B-Plan ist die Genehmigung unsicher. Dies senkt den fairen Pachtpreis deutlich (-8%).
+              </div>
+            )}
           </Section>
 
           {/* Geländeneigung */}

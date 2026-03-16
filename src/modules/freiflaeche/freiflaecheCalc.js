@@ -280,6 +280,13 @@ export const AUSGLEICH_TYPEN = [
   "Artenschutz (sehr teuer)",
 ];
 
+export const PRIVILEGIERUNG_OPTIONEN = [
+  "Privilegiert (§35 BauGB)",
+  "B-Plan vorhanden",
+  "B-Plan in Aufstellung",
+  "Nicht privilegiert",
+];
+
 /**
  * Berechnet den Fair-Score für den Pachtpreis.
  * Jeder Faktor liefert einen Prozent-Aufschlag/-Abschlag.
@@ -426,6 +433,41 @@ export function berechneFairScore(bewertung) {
     wert: `${nvpEntfernung} km`,
     anpassung: nvpAnpassung,
     erklaerung: nvpEntfernung <= 1 ? "Kurze Kabeltrasse" : nvpEntfernung > 5 ? "Hohe Anschlusskosten" : "Normale Entfernung",
+  });
+
+  // 11. Privilegierung (§35 BauGB / B-Plan)
+  const privilegierung = bewertung.privilegierung || "Nicht privilegiert";
+  let privAnpassung = 0;
+  if (privilegierung === "Privilegiert (§35 BauGB)") privAnpassung = 5;
+  else if (privilegierung === "B-Plan vorhanden") privAnpassung = 3;
+  else if (privilegierung === "B-Plan in Aufstellung") privAnpassung = -2;
+  else privAnpassung = -8;
+  faktoren.push({
+    name: "Privilegierung / Planungsrecht",
+    wert: privilegierung,
+    anpassung: privAnpassung,
+    erklaerung: privAnpassung >= 3 ? "Genehmigung gesichert – geringes Planungsrisiko"
+      : privAnpassung >= 0 ? "B-Plan in Aufstellung – Restrisiko"
+      : "Kein Baurecht – hohes Planungsrisiko und Zeitaufwand",
+  });
+
+  // 12. Flächengröße (große Fläche = Bonus, gleicher Planungsaufwand)
+  const flaecheHa = parseFloat(bewertung.pachtflaecheHa) || 0;
+  let flaechenAnpassung = 0;
+  if (flaecheHa >= 30) flaechenAnpassung = 8;
+  else if (flaecheHa >= 20) flaechenAnpassung = 6;
+  else if (flaecheHa >= 10) flaechenAnpassung = 4;
+  else if (flaecheHa >= 5) flaechenAnpassung = 2;
+  else if (flaecheHa >= 3) flaechenAnpassung = 0;
+  else if (flaecheHa >= 1) flaechenAnpassung = -4;
+  else flaechenAnpassung = -8;
+  faktoren.push({
+    name: "Flächengröße",
+    wert: flaecheHa > 0 ? `${flaecheHa} ha` : "Nicht angegeben",
+    anpassung: flaechenAnpassung,
+    erklaerung: flaechenAnpassung >= 4 ? "Große Fläche – Planungsaufwand verteilt sich, höhere Pacht/ha gerechtfertigt"
+      : flaechenAnpassung >= 0 ? "Mittlere Fläche – normaler Aufwand"
+      : "Kleine Fläche – gleicher Planungsaufwand bei weniger Ertrag",
   });
 
   // Summe berechnen
