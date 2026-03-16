@@ -40,7 +40,7 @@ const MODULE = [
     icon: "👥",
     label: "Kunden",
     status: "Aktiv",
-    color: "#6A1B9A",
+    color: "#7B1FA2",
     path: "/kunden",
   },
 ];

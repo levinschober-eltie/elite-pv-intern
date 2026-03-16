@@ -1,144 +1,148 @@
 // ============================================================
-// BESS – Kalkulation (3 Modelle)
-// Basis: Enerpeak Referenzvertrag (Flächennutzungsvertrag BESS)
+// BESS – Kalkulation (3 Modelle A–C)
+// Basis: Enerpeak BESS-Vorlage (Flächennutzungsvertrag)
 // ============================================================
 
-const rund2 = (v) => Math.round(v * 100) / 100;
-
 // ============================================================
-// MODELL A: Festpacht pro m² (Enerpeak-Modell)
-// Referenz: Enerpeak §5 – €/m², +10% ab BJ 11, 50% Vorhaltung
+// MODELL A: Festpacht pro m² BESS-Fläche
+// Referenz: Enerpeak §5 – [...] €/m²
 // ============================================================
 function berechneModellA(params) {
   const {
     bessFlaecheM2,
-    satzProM2 = 4,
-    steigerungProzent = 10,
+    satzProM2 = 8,
+    wertsicherungProzent = 10,
     laufzeitJahre = 20,
   } = params;
 
-  const pachtzinsJahr = rund2(bessFlaecheM2 * satzProM2);
+  const pachtzinsJahr = bessFlaecheM2 * satzProM2;
   const jahresWerte = [];
   let gesamtPacht = 0;
 
   for (let j = 1; j <= laufzeitJahre; j++) {
-    const steigerung = j > 10 ? 1 + steigerungProzent / 100 : 1;
-    const jahresPacht = rund2(pachtzinsJahr * steigerung);
+    // Wertsicherung: +10% ab 11. Betriebsjahr (Enerpeak §5.2)
+    const wertsicherungsFaktor = j > 10 ? 1 : 0;
+    const faktor = Math.pow(1 + wertsicherungProzent / 100, wertsicherungsFaktor);
+    const jahresPacht = pachtzinsJahr * faktor;
     gesamtPacht += jahresPacht;
-    jahresWerte.push({ jahr: j, betrag: jahresPacht });
+    jahresWerte.push({ jahr: j, betrag: jahresPacht, faktor });
   }
 
   return {
-    modell: "Festpacht pro m\u00B2",
+    modell: "Festpacht pro m²",
     modellKey: "A",
     pachtzinsJahr,
-    pachtzinsMonat: rund2(pachtzinsJahr / 12),
-    pachtGesamt: rund2(gesamtPacht),
+    pachtzinsMonat: pachtzinsJahr / 12,
+    pachtGesamt: gesamtPacht,
     satzProM2,
-    steigerungProzent,
+    bessFlaecheM2,
+    wertsicherungProzent,
     jahresWerte,
   };
 }
 
 // ============================================================
-// MODELL B: Festpacht pro MWh Kapazität
+// MODELL B: Festpacht pro MW Leistung
 // ============================================================
 function berechneModellB(params) {
   const {
-    kapazitaetMwh,
-    satzProMwh = 1500,
-    steigerungProzent = 10,
+    leistungMw,
+    satzProMw = 15000,
+    wertsicherungProzent = 10,
     laufzeitJahre = 20,
   } = params;
 
-  const pachtzinsJahr = rund2(kapazitaetMwh * satzProMwh);
+  const pachtzinsJahr = leistungMw * satzProMw;
   const jahresWerte = [];
   let gesamtPacht = 0;
 
   for (let j = 1; j <= laufzeitJahre; j++) {
-    const steigerung = j > 10 ? 1 + steigerungProzent / 100 : 1;
-    const jahresPacht = rund2(pachtzinsJahr * steigerung);
+    const wertsicherungsFaktor = j > 10 ? 1 : 0;
+    const faktor = Math.pow(1 + wertsicherungProzent / 100, wertsicherungsFaktor);
+    const jahresPacht = pachtzinsJahr * faktor;
     gesamtPacht += jahresPacht;
-    jahresWerte.push({ jahr: j, betrag: jahresPacht });
+    jahresWerte.push({ jahr: j, betrag: jahresPacht, faktor });
   }
 
   return {
-    modell: "Festpacht pro MWh",
+    modell: "Festpacht pro MW",
     modellKey: "B",
     pachtzinsJahr,
-    pachtzinsMonat: rund2(pachtzinsJahr / 12),
-    pachtGesamt: rund2(gesamtPacht),
-    satzProMwh,
-    kapazitaetMwh,
-    steigerungProzent,
+    pachtzinsMonat: pachtzinsJahr / 12,
+    pachtGesamt: gesamtPacht,
+    satzProMw,
+    leistungMw,
+    wertsicherungProzent,
     jahresWerte,
   };
 }
 
 // ============================================================
-// MODELL C: Hybrid (Mindestpacht/m² + Kapazitätszuschlag/MWh)
+// MODELL C: Revenue Share (% vom Umsatz)
 // ============================================================
 function berechneModellC(params) {
   const {
-    bessFlaecheM2,
+    leistungMw,
     kapazitaetMwh,
-    mindestProM2 = 2.5,
-    zuschlagProMwh = 800,
-    steigerungProzent = 10,
+    zyklenProJahr = 300,
+    strompreisEurMwh = 80,
+    revenueProzent = 5,
+    wertsicherungProzent = 10,
     laufzeitJahre = 20,
   } = params;
 
-  const mindestpacht = rund2(bessFlaecheM2 * mindestProM2);
-  const kapazitaetsZuschlag = rund2(kapazitaetMwh * zuschlagProMwh);
-  const pachtzinsJahr = rund2(mindestpacht + kapazitaetsZuschlag);
+  const jahresUmsatz = kapazitaetMwh * zyklenProJahr * strompreisEurMwh;
+  const pachtzinsJahr = jahresUmsatz * (revenueProzent / 100);
 
   const jahresWerte = [];
   let gesamtPacht = 0;
 
   for (let j = 1; j <= laufzeitJahre; j++) {
-    const steigerung = j > 10 ? 1 + steigerungProzent / 100 : 1;
-    const jahresPacht = rund2(pachtzinsJahr * steigerung);
+    const wertsicherungsFaktor = j > 10 ? 1 : 0;
+    const faktor = Math.pow(1 + wertsicherungProzent / 100, wertsicherungsFaktor);
+    const jahresPacht = pachtzinsJahr * faktor;
     gesamtPacht += jahresPacht;
-    jahresWerte.push({ jahr: j, betrag: jahresPacht });
+    jahresWerte.push({ jahr: j, betrag: jahresPacht, faktor });
   }
 
   return {
-    modell: "Hybrid (Fl\u00E4che + Kapazit\u00E4t)",
+    modell: "Revenue Share",
     modellKey: "C",
     pachtzinsJahr,
-    pachtzinsMonat: rund2(pachtzinsJahr / 12),
-    pachtGesamt: rund2(gesamtPacht),
-    mindestpacht,
-    mindestProM2,
-    kapazitaetsZuschlag,
-    zuschlagProMwh,
-    steigerungProzent,
+    pachtzinsMonat: pachtzinsJahr / 12,
+    pachtGesamt: gesamtPacht,
+    jahresUmsatz,
+    revenueProzent,
+    zyklenProJahr,
+    strompreisEurMwh,
+    wertsicherungProzent,
     jahresWerte,
   };
 }
 
 // ============================================================
-// VORHALTEVERGÜTUNG (50% des Nutzungsentgelts vor IBN)
-// Referenz: Enerpeak §5 Abs. 3
+// VORHALTEVERGÜTUNG (vor Inbetriebnahme)
 // ============================================================
-export function berechneVorhalteverguetung(pachtzinsJahr, prozent = 50) {
-  const betragJahr = rund2(pachtzinsJahr * (prozent / 100));
+export function berechneVorhalteverguetung(bessFlaecheM2 = 0, satzProM2 = 8, prozentVorhalt = 50) {
+  // Enerpeak §5.3: 50% des Nutzungsentgelts vor IBN
+  const vollBetrag = bessFlaecheM2 * satzProM2;
+  const betragJahr = vollBetrag * (prozentVorhalt / 100);
   return {
     betragJahr,
-    betragMonat: rund2(betragJahr / 12),
-    prozent,
-    hinweis: "F\u00E4llig ab Bereitstellung bis Inbetriebnahme (Enerpeak \u00A75 Abs. 3)",
+    betragMonat: betragJahr / 12,
+    prozentVorhalt,
+    hinweis: "Fällig ab Bereitstellung bis Inbetriebnahme (50% des Nutzungsentgelts gem. §5.3)",
   };
 }
 
 // ============================================================
-// RÜCKBAUBÜRGSCHAFT (Enerpeak §9 Abs. 5)
+// RÜCKBAUBÜRGSCHAFT (§9 Enerpeak)
 // ============================================================
-export function berechneRueckbaubuergschaft(kapazitaetKwh, satzProKwh = 8) {
+export function berechneRueckbaubuergschaft(bessFlaecheM2, satzProM2 = 25) {
   return {
-    kapazitaetKwh,
-    satzProKwh,
-    buergschaftBetrag: rund2(kapazitaetKwh * satzProKwh),
+    bessFlaecheM2,
+    satzProM2,
+    buergschaftBetrag: bessFlaecheM2 * satzProM2,
   };
 }
 
@@ -148,24 +152,18 @@ export function berechneRueckbaubuergschaft(kapazitaetKwh, satzProKwh = 8) {
 export const NETZANSCHLUSS_EBENEN = [
   "Mittelspannung",
   "Hochspannung",
-  "H\u00F6chstspannung",
+  "Höchstspannung",
 ];
 
+// ============================================================
+// BESS-TECHNOLOGIE
+// ============================================================
 export const BESS_TECHNOLOGIEN = [
-  "Lithium-Ionen (LFP)",
   "Lithium-Ionen (NMC)",
+  "Lithium-Eisenphosphat (LFP)",
   "Natrium-Ionen",
-  "Redox-Flow (Vanadium)",
+  "Redox-Flow",
   "Sonstige",
-];
-
-export const BESS_ANWENDUNGEN = [
-  "Arbitrage / Stromhandel",
-  "Regelenergie (FCR/aFRR)",
-  "Peak Shaving",
-  "PV-Hybrid (Speicher + Solar)",
-  "Netzdienstleistungen",
-  "Kombination",
 ];
 
 // ============================================================
@@ -173,43 +171,43 @@ export const BESS_ANWENDUNGEN = [
 // ============================================================
 export function berechneBESS(formData) {
   const bessFlaecheM2 = parseFloat(formData.bessFlaecheM2) || 0;
-  const kapazitaetMwh = parseFloat(formData.kapazitaetMwh) || 0;
   const leistungMw = parseFloat(formData.leistungMw) || 0;
+  const kapazitaetMwh = parseFloat(formData.kapazitaetMwh) || 0;
   const laufzeitJahre = parseInt(formData.laufzeitJahre) || 20;
-  const steigerungProzent = parseFloat(formData.steigerungProzent) || 10;
 
   const modellA = berechneModellA({
     bessFlaecheM2,
-    satzProM2: parseFloat(formData.satzProM2) || 4,
-    steigerungProzent,
+    satzProM2: parseFloat(formData.satzProM2) || 8,
+    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
     laufzeitJahre,
   });
 
   const modellB = berechneModellB({
-    kapazitaetMwh,
-    satzProMwh: parseFloat(formData.satzProMwh) || 1500,
-    steigerungProzent,
+    leistungMw,
+    satzProMw: parseFloat(formData.satzProMw) || 15000,
+    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
     laufzeitJahre,
   });
 
   const modellC = berechneModellC({
-    bessFlaecheM2,
+    leistungMw,
     kapazitaetMwh,
-    mindestProM2: parseFloat(formData.mindestProM2) || 2.5,
-    zuschlagProMwh: parseFloat(formData.zuschlagProMwh) || 800,
-    steigerungProzent,
+    zyklenProJahr: parseInt(formData.zyklenProJahr) || 300,
+    strompreisEurMwh: parseFloat(formData.strompreisEurMwh) || 80,
+    revenueProzent: parseFloat(formData.revenueProzent) || 5,
+    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
     laufzeitJahre,
   });
 
-  const gewaehltes = { A: modellA, B: modellB, C: modellC }[formData.gewaehlteModell || "A"];
   const vorhalteverguetung = berechneVorhalteverguetung(
-    gewaehltes.pachtzinsJahr,
+    bessFlaecheM2,
+    parseFloat(formData.satzProM2) || 8,
     parseFloat(formData.vorhalteProzent) || 50
   );
 
   const rueckbau = berechneRueckbaubuergschaft(
-    kapazitaetMwh * 1000,
-    parseFloat(formData.rueckbauSatzKwh) || 8
+    bessFlaecheM2,
+    parseFloat(formData.rueckbauSatzM2) || 25
   );
 
   return {
@@ -219,8 +217,8 @@ export function berechneBESS(formData) {
     vorhalteverguetung,
     rueckbau,
     bessFlaecheM2,
-    kapazitaetMwh,
     leistungMw,
+    kapazitaetMwh,
     laufzeitJahre,
   };
 }

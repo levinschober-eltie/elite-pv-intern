@@ -1,14 +1,12 @@
-import React, { useState, useMemo, memo } from "react";
+import React, { useState, useMemo } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import {
   berechneBESS,
   NETZANSCHLUSS_EBENEN,
   BESS_TECHNOLOGIEN,
-  BESS_ANWENDUNGEN,
 } from "./bessCalc";
 import { BESS_KLAUSELN } from "./bessClauses";
-import { getKlauseln } from "../../lib/klauselStore";
 import {
   generateBESSPreisblattDocx,
   generateBESSVertragDocx,
@@ -22,14 +20,13 @@ import ClauseEditor from "../../components/ClauseEditor";
 import OwnerFields, { createDefaultEigentuemer } from "../../components/OwnerFields";
 import LandRegisterFields, { createDefaultGrundbuch } from "../../components/LandRegisterFields";
 import WarningBanner from "../../components/WarningBanner";
-import { useToast } from "../../components/Toast";
 
 // ============================================================
 // MODELL-KARTE (A–C)
 // ============================================================
 const MODELL_FARBEN = { A: COLORS.yellow, B: COLORS.blue, C: COLORS.green };
 
-const ModellKarte = memo(function ModellKarte({ modell, aktiv, onClick, modellKey }) {
+function ModellKarte({ modell, aktiv, onClick, modellKey }) {
   const farbe = MODELL_FARBEN[modellKey] || COLORS.yellow;
   const istDunkel = modellKey === "B";
   return (
@@ -47,7 +44,7 @@ const ModellKarte = memo(function ModellKarte({ modell, aktiv, onClick, modellKe
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <span style={{ fontWeight: 700, fontSize: 13, color: COLORS.dark }}>
-          {aktiv ? "\u2713 " : ""}Modell {modellKey}: {modell.modell}
+          {aktiv ? "✓ " : ""}Modell {modellKey}: {modell.modell}
         </span>
         {aktiv && (
           <span
@@ -60,25 +57,25 @@ const ModellKarte = memo(function ModellKarte({ modell, aktiv, onClick, modellKe
               borderRadius: 4,
             }}
           >
-            GEW\u00C4HLT
+            GEWÄHLT
           </span>
         )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
         <div>
-          <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Pacht/Jahr</div>
+          <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Jahr (1. BJ)</div>
           <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.dark }}>
             {formatEuro(modell.pachtzinsJahr)}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Pacht/Monat</div>
+          <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Monat</div>
           <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.dark }}>
             {formatEuro(modell.pachtzinsMonat)}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Summe</div>
+          <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Gesamt</div>
           <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.dark }}>
             {formatEuro(modell.pachtGesamt)}
           </div>
@@ -86,49 +83,53 @@ const ModellKarte = memo(function ModellKarte({ modell, aktiv, onClick, modellKe
       </div>
     </div>
   );
-});
+}
 
 // ============================================================
 // MAIN GENERATOR
 // ============================================================
 export default function BESSGenerator() {
-  const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
-    () => getKlauseln("bess", BESS_KLAUSELN)
+    BESS_KLAUSELN.map((k) => ({ ...k }))
   );
 
   const [eigentuemer, setEigentuemer] = useState(createDefaultEigentuemer());
   const [grundbuch, setGrundbuch] = useState(createDefaultGrundbuch());
 
   const [formData, setFormData] = useState({
-    // Grundst\u00FCck
+    // Grundstück
     grundstueckAdresse: "",
+    grundstueckGroesse: "",
+    // BESS-Technik
+    leistungMw: "",
+    kapazitaetMwh: "",
+    cRate: "",
+    technologie: "Lithium-Eisenphosphat (LFP)",
+    netzanschlussEbene: "Hochspannung",
+    bessFlaecheM2: "",
+    // Brandschutz
+    brandschutzAbstand: 10,
+    laermEmission: "",
+    // Modell A – m²
+    satzProM2: 8,
+    // Modell B – MW
+    satzProMw: 15000,
+    // Modell C – Revenue
+    zyklenProJahr: 300,
+    strompreisEurMwh: 80,
+    revenueProzent: 5,
+    // Allgemein
+    wertsicherungProzent: 10,
+    laufzeitJahre: 20,
+    vorhalteProzent: 50,
+    rueckbauSatzM2: 25,
+    gewaehlteModell: "A",
+    // Bankdaten
     eigentuemerIban: "",
     eigentuemerBic: "",
-    // BESS-Technik
-    bessFlaecheM2: "",
-    kapazitaetMwh: "",
-    leistungMw: "",
-    containerAnzahl: "",
-    technologie: "Lithium-Ionen (LFP)",
-    anwendung: "Arbitrage / Stromhandel",
-    netzanschlussEbene: "Mittelspannung",
-    // Pachtmodell
-    laufzeitJahre: 20,
-    steigerungProzent: 10,
-    vorhalteProzent: 50,
-    rueckbauSatzKwh: 8,
-    // Modell A
-    satzProM2: 4,
-    // Modell B
-    satzProMwh: 1500,
-    // Modell C
-    mindestProM2: 2.5,
-    zuschlagProMwh: 800,
-    // Allgemein
-    gewaehlteModell: "A",
+    // Zusatz
     zusatzvereinbarungen: "",
   });
 
@@ -136,25 +137,26 @@ export default function BESSGenerator() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Auto C-Rate berechnen
+  const leistungMw = parseFloat(formData.leistungMw) || 0;
+  const kapazitaetMwh = parseFloat(formData.kapazitaetMwh) || 0;
+  const cRate = kapazitaetMwh > 0 ? (leistungMw / kapazitaetMwh).toFixed(2) : "–";
+  const bessFlaecheM2 = parseFloat(formData.bessFlaecheM2) || 0;
+
   // Kalkulation
-  const kalkulationsDaten = {
-    ...formData,
-    eigentuemer,
-    grundbuch,
-  };
-  const ergebnis = useMemo(() => berechneBESS(kalkulationsDaten), [
+  const ergebnis = useMemo(() => berechneBESS(formData), [
     formData.bessFlaecheM2,
-    formData.kapazitaetMwh,
     formData.leistungMw,
+    formData.kapazitaetMwh,
     formData.satzProM2,
-    formData.satzProMwh,
-    formData.mindestProM2,
-    formData.zuschlagProMwh,
-    formData.steigerungProzent,
+    formData.satzProMw,
+    formData.zyklenProJahr,
+    formData.strompreisEurMwh,
+    formData.revenueProzent,
+    formData.wertsicherungProzent,
     formData.laufzeitJahre,
     formData.vorhalteProzent,
-    formData.rueckbauSatzKwh,
-    formData.gewaehlteModell,
+    formData.rueckbauSatzM2,
   ]);
 
   const gewaehltes = ergebnis[`modell${formData.gewaehlteModell}`];
@@ -163,30 +165,23 @@ export default function BESSGenerator() {
   const eigName = (eigentuemer.partner || []).map((p) => p.name).filter(Boolean).join(", ");
   const eigAdresse = (eigentuemer.partner || []).map((p) => p.adresse).filter(Boolean).join(", ")
     || (eigentuemer.eigStrasse && eigentuemer.eigOrt ? `${eigentuemer.eigStrasse}, ${eigentuemer.eigPlz} ${eigentuemer.eigOrt}` : "");
-  const hatFlurstueck = (grundbuch || []).some((z) => z.flurNr);
-  const bessFlaecheM2 = parseFloat(formData.bessFlaecheM2) || 0;
-  const kapazitaetMwh = parseFloat(formData.kapazitaetMwh) || 0;
-  const leistungMw = parseFloat(formData.leistungMw) || 0;
+  const hatFlurstück = (grundbuch || []).some((z) => z.flurNr);
 
-  // Pflichtfeld-Fehler (blockieren Export)
   const fehler = [];
-  if (!eigName) fehler.push("Eigent\u00FCmer-Name fehlt");
-  if (!eigAdresse) fehler.push("Eigent\u00FCmer-Adresse fehlt");
-  if (bessFlaecheM2 === 0) fehler.push("BESS-Fl\u00E4che = 0 m\u00B2");
-  if (kapazitaetMwh === 0) fehler.push("Kapazit\u00E4t = 0 MWh");
-  if (!hatFlurstueck) fehler.push("Mind. 1 Flurst\u00FCck erforderlich");
+  if (!eigName) fehler.push("Eigentümer-Name fehlt");
+  if (!eigAdresse) fehler.push("Eigentümer-Adresse fehlt");
+  if (bessFlaecheM2 === 0) fehler.push("BESS-Fläche = 0 m²");
+  if (!hatFlurstück) fehler.push("Mind. 1 Flurstück erforderlich");
 
-  // Warnungen (nicht-blockierend)
   const warnungen = [];
-  if (bessFlaecheM2 > 0 && bessFlaecheM2 < 500) warnungen.push("BESS-Fl\u00E4che < 500 m\u00B2 \u2013 f\u00FCr BESS ungew\u00F6hnlich klein");
-  if (kapazitaetMwh > 500) warnungen.push("Kapazit\u00E4t > 500 MWh \u2013 Plausibilit\u00E4t pr\u00FCfen");
-  if (leistungMw === 0) warnungen.push("Leistung = 0 MW \u2013 bitte angeben");
+  if (leistungMw > 0 && leistungMw < 1) warnungen.push("BESS-Leistung < 1 MW – wirtschaftlich fragwürdig");
+  if (bessFlaecheM2 > 0 && bessFlaecheM2 < 500) warnungen.push("BESS-Fläche < 500 m² – für Großspeicher ungewöhnlich klein");
+  if (parseFloat(cRate) > 4) warnungen.push("C-Rate > 4 – technisch unüblich, bitte prüfen");
 
-  // Alle Meldungen f\u00FCr Banner
-  const alleMeldungen = [...fehler.map((f) => "\u274C " + f), ...warnungen];
+  const alleMeldungen = [...fehler.map((f) => "❌ " + f), ...warnungen];
   const exportGesperrt = fehler.length > 0;
 
-  const tabNamen = ["Eigent\u00FCmer", "Grundst\u00FCck", "BESS-Technik", "Pachtmodell", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Eigentümer", "Grundstück", "BESS-Technik", "Pachtmodell", "Ergebnis", "Vertrag"];
 
   // DOCX-Export
   const handleDocxExport = async (typ) => {
@@ -203,7 +198,7 @@ export default function BESSGenerator() {
         await generateBESSVertragDocx(exportData, ergebnis, klauseln);
       }
     } catch (error) {
-      showToast("DOCX-Fehler: " + error.message, "error");
+      alert("DOCX-Fehler: " + error.message);
     }
     setIsGenerating(false);
   };
@@ -215,26 +210,34 @@ export default function BESSGenerator() {
       <WarningBanner warnungen={alleMeldungen} />
 
       {/* ============================================================ */}
-      {/* TAB 0: Eigent\u00FCmer */}
+      {/* TAB 0: Eigentümer */}
       {/* ============================================================ */}
       {activeTab === 0 && (
-        <Section title="Eigent\u00FCmer / Grundst\u00FCckseigent\u00FCmer" icon="\uD83D\uDC64">
+        <Section title="Grundstückseigentümer" icon="👤">
           <OwnerFields eigentuemer={eigentuemer} onChange={setEigentuemer} />
           <NavButtons onNext={() => setActiveTab(1)} />
         </Section>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 1: Grundst\u00FCck */}
+      {/* TAB 1: Grundstück */}
       {/* ============================================================ */}
       {activeTab === 1 && (
-        <Section title="Grundst\u00FCcksdaten" icon="\uD83D\uDDFA\uFE0F">
+        <Section title="Grundstücksdaten" icon="🗺️">
           <TextInput
-            label="Grundst\u00FCcksadresse"
+            label="Grundstücksadresse"
             value={formData.grundstueckAdresse}
             onChange={update("grundstueckAdresse")}
-            placeholder="Stra\u00DFe / Flurbezeichnung, PLZ Ort"
+            placeholder="Straße / Flurbezeichnung, PLZ Ort"
           />
+          <div style={{ marginTop: 8 }}>
+            <TextInput
+              label="Grundstücksgröße (gesamt)"
+              value={formData.grundstueckGroesse}
+              onChange={update("grundstueckGroesse")}
+              placeholder="z.B. 5,2 ha oder 12.000 m²"
+            />
+          </div>
 
           <div style={{ marginTop: 16 }}>
             <LandRegisterFields zeilen={grundbuch} onChange={setGrundbuch} />
@@ -263,29 +266,10 @@ export default function BESSGenerator() {
       {/* TAB 2: BESS-Technik */}
       {/* ============================================================ */}
       {activeTab === 2 && (
-        <Section title="BESS-Technik" icon="\uD83D\uDD0B">
+        <Section title="BESS-Technische Daten" icon="🔋">
           <div style={styles.grid2}>
             <TextInput
-              label="BESS-Fl\u00E4che"
-              value={formData.bessFlaecheM2}
-              onChange={update("bessFlaecheM2")}
-              type="number"
-              suffix="m\u00B2"
-              min={0}
-            />
-            <TextInput
-              label="Speicherkapazit\u00E4t"
-              value={formData.kapazitaetMwh}
-              onChange={update("kapazitaetMwh")}
-              type="number"
-              suffix="MWh"
-              min={0}
-            />
-          </div>
-
-          <div style={{ ...styles.grid2, marginTop: 10 }}>
-            <TextInput
-              label="Leistung"
+              label="BESS-Leistung"
               value={formData.leistungMw}
               onChange={update("leistungMw")}
               type="number"
@@ -293,11 +277,11 @@ export default function BESSGenerator() {
               min={0}
             />
             <TextInput
-              label="Container-Anzahl"
-              value={formData.containerAnzahl}
-              onChange={update("containerAnzahl")}
+              label="BESS-Kapazität"
+              value={formData.kapazitaetMwh}
+              onChange={update("kapazitaetMwh")}
               type="number"
-              suffix="Stk."
+              suffix="MWh"
               min={0}
             />
           </div>
@@ -310,15 +294,6 @@ export default function BESSGenerator() {
               options={BESS_TECHNOLOGIEN}
             />
             <SelectInput
-              label="Anwendung"
-              value={formData.anwendung}
-              onChange={update("anwendung")}
-              options={BESS_ANWENDUNGEN}
-            />
-          </div>
-
-          <div style={{ ...styles.grid2, marginTop: 10 }}>
-            <SelectInput
               label="Netzanschlussebene"
               value={formData.netzanschlussEbene}
               onChange={update("netzanschlussEbene")}
@@ -326,8 +301,27 @@ export default function BESSGenerator() {
             />
           </div>
 
+          <div style={{ ...styles.grid2, marginTop: 10 }}>
+            <TextInput
+              label="BESS-Fläche (Nutzfläche)"
+              value={formData.bessFlaecheM2}
+              onChange={update("bessFlaecheM2")}
+              type="number"
+              suffix="m²"
+              min={0}
+            />
+            <TextInput
+              label="Brandschutzabstand"
+              value={formData.brandschutzAbstand}
+              onChange={update("brandschutzAbstand")}
+              type="number"
+              suffix="m"
+              min={0}
+            />
+          </div>
+
           {/* Quick-Info */}
-          {bessFlaecheM2 > 0 && kapazitaetMwh > 0 && (
+          {leistungMw > 0 && kapazitaetMwh > 0 && (
             <div
               style={{
                 marginTop: 14,
@@ -341,8 +335,13 @@ export default function BESSGenerator() {
                 Kennzahlen
               </div>
               <div style={{ fontWeight: 700, fontSize: 13, color: COLORS.dark }}>
-                {(kapazitaetMwh / bessFlaecheM2 * 1000).toFixed(1)} kWh/m\u00B2 | {kapazitaetMwh} MWh ({(kapazitaetMwh * 1000).toFixed(0)} kWh) | {leistungMw > 0 ? `C-Rate: ${(leistungMw / kapazitaetMwh).toFixed(2)}` : "Leistung fehlt"}
+                C-Rate: {cRate} | {leistungMw} MW / {kapazitaetMwh} MWh | {formData.technologie}
               </div>
+              {bessFlaecheM2 > 0 && (
+                <div style={{ fontSize: 12, color: COLORS.mid, marginTop: 4 }}>
+                  Leistungsdichte: {(leistungMw * 1000 / bessFlaecheM2).toFixed(1)} kW/m² | Rückbausicherheit: {formatEuro(bessFlaecheM2 * (parseFloat(formData.rueckbauSatzM2) || 25))}
+                </div>
+              )}
             </div>
           )}
 
@@ -356,10 +355,10 @@ export default function BESSGenerator() {
       {activeTab === 3 && (
         <>
           {/* Allgemeine Parameter */}
-          <Section title="Vertragslaufzeit & Steigerung" icon="\u2699\uFE0F">
+          <Section title="Vertragslaufzeit & Wertsicherung" icon="⚙️">
             <div style={styles.grid2}>
               <TextInput
-                label="Vertragslaufzeit"
+                label="Vertragslaufzeit (Festlaufzeit)"
                 value={formData.laufzeitJahre}
                 onChange={update("laufzeitJahre")}
                 type="number"
@@ -368,102 +367,112 @@ export default function BESSGenerator() {
                 max={30}
               />
               <TextInput
-                label="Steigerung ab Betriebsjahr 11"
-                value={formData.steigerungProzent}
-                onChange={update("steigerungProzent")}
+                label="Wertsicherung (ab 11. BJ)"
+                value={formData.wertsicherungProzent}
+                onChange={update("wertsicherungProzent")}
                 type="number"
-                suffix="% ab BJ 11"
+                suffix="%"
                 min={0}
-                max={20}
+                max={30}
               />
             </div>
             <div style={{ ...styles.grid2, marginTop: 8 }}>
               <TextInput
-                label="Vorhalteverg\u00FCtung (vor IBN)"
+                label="Vorhaltevergütung (% vor IBN)"
                 value={formData.vorhalteProzent}
                 onChange={update("vorhalteProzent")}
                 type="number"
-                suffix="% vor IBN"
+                suffix="%"
                 min={0}
                 max={100}
               />
               <TextInput
-                label="R\u00FCckbausicherheit"
-                value={formData.rueckbauSatzKwh}
-                onChange={update("rueckbauSatzKwh")}
+                label="Rückbausicherheit"
+                value={formData.rueckbauSatzM2}
+                onChange={update("rueckbauSatzM2")}
                 type="number"
-                suffix="\u20AC/kWh"
-                min={1}
-                max={20}
+                suffix="€/m²"
+                min={0}
               />
             </div>
           </Section>
 
-          {/* Modell A \u2013 Festpacht pro m\u00B2 */}
-          <Section title="Modell A \u2013 Festpacht pro m\u00B2" icon="\uD83C\uDD70\uFE0F">
+          {/* Modell A – m² */}
+          <Section title="Modell A – Festpacht pro m² BESS-Fläche" icon="🅰️">
             <TextInput
-              label="Satz pro m\u00B2"
+              label="Satz pro m²"
               value={formData.satzProM2}
               onChange={update("satzProM2")}
               type="number"
-              suffix="\u20AC/m\u00B2/J."
+              suffix="€/m²/J."
               min={1}
             />
             {bessFlaecheM2 > 0 && (
               <div style={{ marginTop: 6, fontSize: 12, color: COLORS.mid }}>
-                {formatZahl(bessFlaecheM2, 0)} m\u00B2 \u00D7 {formData.satzProM2} \u20AC = <strong>{formatEuro(ergebnis.modellA.pachtzinsJahr)}/Jahr</strong>
+                {bessFlaecheM2} m² × {formData.satzProM2} € = <strong>{formatEuro(ergebnis.modellA.pachtzinsJahr)}/Jahr</strong>
               </div>
             )}
           </Section>
 
-          {/* Modell B \u2013 Festpacht pro MWh */}
-          <Section title="Modell B \u2013 Festpacht pro MWh Kapazit\u00E4t" icon="\uD83C\uDD71\uFE0F">
+          {/* Modell B – MW */}
+          <Section title="Modell B – Festpacht pro MW" icon="🅱️">
             <TextInput
-              label="Satz pro MWh"
-              value={formData.satzProMwh}
-              onChange={update("satzProMwh")}
+              label="Satz pro MW"
+              value={formData.satzProMw}
+              onChange={update("satzProMw")}
               type="number"
-              suffix="\u20AC/MWh/J."
-              min={500}
+              suffix="€/MW/J."
+              min={5000}
             />
-            {kapazitaetMwh > 0 && (
+            {leistungMw > 0 && (
               <div style={{ marginTop: 6, fontSize: 12, color: COLORS.mid }}>
-                {formatZahl(kapazitaetMwh, 1)} MWh \u00D7 {formData.satzProMwh} \u20AC = <strong>{formatEuro(ergebnis.modellB.pachtzinsJahr)}/Jahr</strong>
+                {leistungMw} MW × {formatEuro(formData.satzProMw)} = <strong>{formatEuro(ergebnis.modellB.pachtzinsJahr)}/Jahr</strong>
               </div>
             )}
           </Section>
 
-          {/* Modell C \u2013 Hybrid */}
-          <Section title="Modell C \u2013 Hybrid (Fl\u00E4che + Kapazit\u00E4t)" icon="\u00A9\uFE0F">
+          {/* Modell C – Revenue Share */}
+          <Section title="Modell C – Revenue Share" icon="©️">
             <div style={styles.grid2}>
               <TextInput
-                label="Mindestpacht pro m\u00B2"
-                value={formData.mindestProM2}
-                onChange={update("mindestProM2")}
+                label="Zyklen pro Jahr"
+                value={formData.zyklenProJahr}
+                onChange={update("zyklenProJahr")}
                 type="number"
-                suffix="\u20AC/m\u00B2/J."
-                min={1}
+                suffix="Zyklen"
+                min={100}
+                max={1000}
               />
               <TextInput
-                label="Kapazit\u00E4tszuschlag pro MWh"
-                value={formData.zuschlagProMwh}
-                onChange={update("zuschlagProMwh")}
+                label="Strompreis"
+                value={formData.strompreisEurMwh}
+                onChange={update("strompreisEurMwh")}
                 type="number"
-                suffix="\u20AC/MWh/J."
-                min={100}
+                suffix="€/MWh"
+                min={20}
+                max={300}
+              />
+              <TextInput
+                label="Revenue-Anteil"
+                value={formData.revenueProzent}
+                onChange={update("revenueProzent")}
+                type="number"
+                suffix="%"
+                min={1}
+                max={15}
               />
             </div>
-            {bessFlaecheM2 > 0 && kapazitaetMwh > 0 && (
+            {kapazitaetMwh > 0 && (
               <div style={{ marginTop: 6, fontSize: 12, color: COLORS.mid }}>
-                Mindest: {formatEuro(ergebnis.modellC.mindestpacht)} + Zuschlag: {formatEuro(ergebnis.modellC.kapazitaetsZuschlag)} = <strong>{formatEuro(ergebnis.modellC.pachtzinsJahr)}/Jahr</strong>
+                {kapazitaetMwh} MWh × {formData.zyklenProJahr} × {formData.strompreisEurMwh} €/MWh × {formData.revenueProzent}% = <strong>{formatEuro(ergebnis.modellC.pachtzinsJahr)}/Jahr</strong>
               </div>
             )}
           </Section>
 
           {/* Modellauswahl */}
-          <Section title="Modellauswahl" icon="\u2705">
+          <Section title="Modellauswahl" icon="✅">
             <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 10 }}>
-              W\u00E4hle das Pachtmodell f\u00FCr den Vertrag:
+              Wähle das Pachtmodell für den Vertrag:
             </p>
             {["A", "B", "C"].map((key) => (
               <ModellKarte
@@ -479,7 +488,7 @@ export default function BESSGenerator() {
           <NavButtons
             onPrev={() => setActiveTab(2)}
             onNext={() => setActiveTab(4)}
-            nextLabel="Ergebnis \u2192"
+            nextLabel="Ergebnis →"
           />
         </>
       )}
@@ -489,33 +498,32 @@ export default function BESSGenerator() {
       {/* ============================================================ */}
       {activeTab === 4 && (
         <>
-          {/* Gew\u00E4hltes Modell */}
-          <ResultBox label={`GEW\u00C4HLTES MODELL: ${gewaehltes.modell.toUpperCase()}`}>
+          <ResultBox label={`GEWÄHLTES MODELL: ${gewaehltes.modell.toUpperCase()}`}>
             <ResultGrid>
               <ResultCell
-                label="J\u00E4hrlich (1. BJ)"
+                label="Jährlich (1. BJ)"
                 amount={formatEuro(gewaehltes.pachtzinsJahr)}
                 sub={`Monatlich: ${formatEuro(gewaehltes.pachtzinsMonat)}`}
               />
               <ResultCell
                 label={`Summe ${ergebnis.laufzeitJahre} Jahre`}
                 amount={formatEuro(gewaehltes.pachtGesamt)}
-                sub={`Steigerung: +${formData.steigerungProzent}% ab BJ 11`}
+                sub={`Wertsicherung: +${formData.wertsicherungProzent}% ab 11. BJ`}
               />
             </ResultGrid>
           </ResultBox>
 
-          {/* Zusatzverg\u00FCtungen */}
+          {/* Zusatzvergütungen */}
           <div style={{ ...styles.card, marginTop: 12 }}>
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-              Zus\u00E4tzliche Verg\u00FCtungen
+              Zusätzliche Vergütungen
             </div>
             <DetailRow
-              label="Vorhalteverg\u00FCtung (vor IBN)"
+              label="Vorhaltevergütung (vor IBN)"
               value={`${formatEuro(ergebnis.vorhalteverguetung.betragJahr)} / Jahr (${formData.vorhalteProzent}%)`}
             />
             <DetailRow
-              label="R\u00FCckbaub\u00FCrgschaft"
+              label="Rückbaubürgschaft"
               value={formatEuro(ergebnis.rueckbau.buergschaftBetrag)}
             />
           </div>
@@ -526,7 +534,7 @@ export default function BESSGenerator() {
               Modellvergleich
             </div>
             {["A", "B", "C"].map((key) => {
-              const m = ergebnis[`modell${key}`];
+              const modell = ergebnis[`modell${key}`];
               return (
                 <div
                   key={key}
@@ -536,17 +544,17 @@ export default function BESSGenerator() {
                     padding: formData.gewaehlteModell === key ? "6px 8px" : "6px 0",
                     borderBottom: "1px solid #f0f0f0",
                     fontSize: 12.5,
-                    background: formData.gewaehlteModell === key ? MODELL_FARBEN[key] + "20" : "transparent",
+                    background: formData.gewaehlteModell === key ? COLORS.yellow + "20" : "transparent",
                     borderRadius: 4,
                     marginBottom: 2,
                   }}
                 >
                   <span style={{ color: COLORS.mid }}>
-                    {formData.gewaehlteModell === key && "\u25B6 "}
-                    {key}: {m.modell}
+                    {formData.gewaehlteModell === key && "▶ "}
+                    {key}: {modell.modell}
                   </span>
                   <span style={{ fontWeight: 600 }}>
-                    {formatEuro(m.pachtzinsJahr)}/J. | {formatEuro(m.pachtGesamt)} ({ergebnis.laufzeitJahre}J.)
+                    {formatEuro(modell.pachtzinsJahr)}/J. | {formatEuro(modell.pachtGesamt)} ({ergebnis.laufzeitJahre}J.)
                   </span>
                 </div>
               );
@@ -558,42 +566,27 @@ export default function BESSGenerator() {
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
               Kalkulationsdetails
             </div>
-            <DetailRow label="BESS-Fl\u00E4che" value={`${formatZahl(bessFlaecheM2, 0)} m\u00B2`} />
-            <DetailRow label="Speicherkapazit\u00E4t" value={`${formatZahl(kapazitaetMwh, 1)} MWh (${formatZahl(kapazitaetMwh * 1000, 0)} kWh)`} />
-            <DetailRow label="Leistung" value={`${formatZahl(leistungMw, 1)} MW`} />
-            <DetailRow label="Container" value={`${formData.containerAnzahl || 0} Stk.`} />
+            <DetailRow label="BESS-Fläche" value={`${bessFlaecheM2} m²`} />
+            <DetailRow label="BESS-Leistung" value={`${leistungMw} MW`} />
+            <DetailRow label="BESS-Kapazität" value={`${kapazitaetMwh} MWh`} />
+            <DetailRow label="C-Rate" value={cRate} />
             <DetailRow label="Technologie" value={formData.technologie} />
-            <DetailRow label="Anwendung" value={formData.anwendung} />
-            <DetailRow label="Netzanschlussebene" value={formData.netzanschlussEbene} />
+            <DetailRow label="Netzanschluss" value={formData.netzanschlussEbene} />
             <DetailRow label="Vertragslaufzeit" value={`${ergebnis.laufzeitJahre} Jahre`} />
             <div style={{ height: 2, background: COLORS.yellow, margin: "5px 0" }} />
-            {formData.gewaehlteModell === "A" && (
-              <DetailRow label="Satz pro m\u00B2" value={`${formData.satzProM2} \u20AC/m\u00B2/J.`} />
-            )}
-            {formData.gewaehlteModell === "B" && (
-              <DetailRow label="Satz pro MWh" value={`${formData.satzProMwh} \u20AC/MWh/J.`} />
-            )}
-            {formData.gewaehlteModell === "C" && (
-              <>
-                <DetailRow label="Mindestpacht pro m\u00B2" value={`${formData.mindestProM2} \u20AC/m\u00B2/J.`} />
-                <DetailRow label="Kapazit\u00E4tszuschlag pro MWh" value={`${formData.zuschlagProMwh} \u20AC/MWh/J.`} />
-              </>
-            )}
-            <DetailRow label="Steigerung" value={`+${formData.steigerungProzent}% ab Betriebsjahr 11`} />
-            <div style={{ height: 2, background: COLORS.dark, margin: "5px 0" }} />
             <DetailRow label="Pacht/Jahr (1. BJ)" value={formatEuro(gewaehltes.pachtzinsJahr)} highlight />
             <DetailRow label="Pacht/Monat" value={formatEuro(gewaehltes.pachtzinsMonat)} highlight />
           </div>
 
           {exportGesperrt && (
             <div style={{ textAlign: "center", marginTop: 8, padding: "8px 12px", background: "#FFEBEE", borderRadius: 6, color: "#C62828", fontSize: 12.5 }}>
-              Export nicht m\u00F6glich \u2013 Pflichtdaten fehlen
+              Export nicht möglich – Pflichtdaten fehlen
             </div>
           )}
 
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
             <button style={styles.btnOutline} onClick={() => setActiveTab(3)}>
-              \u2190 Modell \u00E4ndern
+              ← Modell ändern
             </button>
             <button
               style={{ ...styles.btnPrimary, opacity: exportGesperrt ? 0.5 : 1 }}
@@ -603,7 +596,7 @@ export default function BESSGenerator() {
               Preisblatt DOCX
             </button>
             <button style={styles.btnBlue} onClick={() => setActiveTab(5)}>
-              Vertrag \u2192
+              Vertrag →
             </button>
           </div>
         </>
@@ -614,7 +607,7 @@ export default function BESSGenerator() {
       {/* ============================================================ */}
       {activeTab === 5 && (
         <>
-          <Section title="Gestattungsvertrag bearbeiten" icon="\uD83D\uDCDD">
+          <Section title="Flächennutzungsvertrag BESS bearbeiten" icon="📝">
             <ClauseEditor
               klauseln={klauseln}
               setKlauseln={setKlauseln}
@@ -624,20 +617,20 @@ export default function BESSGenerator() {
 
           {exportGesperrt && (
             <div style={{ textAlign: "center", marginTop: 8, padding: "8px 12px", background: "#FFEBEE", borderRadius: 6, color: "#C62828", fontSize: 12.5 }}>
-              Export nicht m\u00F6glich \u2013 Pflichtdaten fehlen
+              Export nicht möglich – Pflichtdaten fehlen
             </div>
           )}
 
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
             <button style={styles.btnOutline} onClick={() => setActiveTab(4)}>
-              \u2190 Ergebnis
+              ← Ergebnis
             </button>
             <button
               style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
               onClick={() => handleDocxExport("vertrag")}
               disabled={isGenerating || exportGesperrt}
             >
-              {isGenerating ? "Wird erstellt\u2026" : "\uD83D\uDCC4 Vertrag als DOCX"}
+              {isGenerating ? "⏳" : "📄"} Vertrag als DOCX
             </button>
           </div>
         </>

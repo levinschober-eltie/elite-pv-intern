@@ -1,14 +1,19 @@
 import {
   generateDocx,
+  createDocxTable,
+  createSectionHeading,
+  createKeyValueTable,
+  createHighlightBox,
 } from "../../lib/docxExport";
-import { formatEuro, formatDatum, formatZahl, zahlInWort } from "../../lib/formatters";
-import { Paragraph, TextRun } from "docx";
+import { formatEuro, formatDatum, formatZahl } from "../../lib/formatters";
+import { Paragraph, TextRun, PageBreak } from "docx";
 
 // ============================================================
 // Vertragsnummer: EPV-BESS-YYYY-NNN
 // ============================================================
 function generiereVertragsnummer() {
-  const jahr = new Date().getFullYear();
+  const jetzt = new Date();
+  const jahr = jetzt.getFullYear();
   const nr = String(Math.floor(Math.random() * 900) + 100);
   return `EPV-BESS-${jahr}-${nr}`;
 }
@@ -20,25 +25,22 @@ function ersetzePlatzhalter(text, daten) {
   const map = {
     "{EIGENTUEMER_NAME}": daten.eigentuemerName || "_______________",
     "{EIGENTUEMER_ADRESSE}": daten.eigentuemerAdresse || "_______________",
-    "{EIGENTUEMER_TYP}": daten.eigentuemerTyp || "Alleineigent\u00FCmer",
+    "{EIGENTUEMER_TYP}": daten.eigentuemerTyp || "Alleineigentümer",
     "{GRUNDBUCH_TABELLE}": daten.grundbuchText || "(siehe Anlage)",
+    "{GRUNDSTUECK_GROESSE}": daten.grundstueckGroesse || "___",
     "{BESS_FLAECHE_M2}": daten.bessFlaecheM2 || "___",
-    "{KAPAZITAET_MWH}": daten.kapazitaetMwh || "___",
     "{LEISTUNG_MW}": daten.leistungMw || "___",
-    "{PACHTZINS_JAHR}": daten.pachtzinsJahr || "___",
-    "{PACHTZINS_WORT}": daten.pachtzinsWort || "_______________",
-    "{STEIGERUNG}": daten.steigerung || "10",
+    "{KAPAZITAET_MWH}": daten.kapazitaetMwh || "___",
+    "{SATZ_PRO_M2}": daten.satzProM2 || "___",
+    "{WERTSICHERUNG}": daten.wertsicherung || "10",
     "{VORHALTE_PROZENT}": daten.vorhalteProzent || "50",
-    "{VORHALTE_BETRAG}": daten.vorhalteBetrag || "___",
+    "{RUECKBAU_BETRAG}": daten.rueckbauBetrag || "___",
     "{LAUFZEIT_JAHRE}": daten.laufzeitJahre || "20",
     "{VERTRAGSNUMMER}": daten.vertragsnummer || "___",
     "{VERTRAGSDATUM}": daten.vertragsdatum || formatDatum(new Date()),
-    "{VERTRETEN_DURCH}": daten.vertretenDurch || "vertreten durch den Gesch\u00E4ftsf\u00FChrer Herrn Levin Schober",
     "{GESCHAEFTSFUEHRER}": "Levin Schober",
     "{EIGENTUEMER_IBAN}": daten.eigentuemerIban || "________________________",
     "{EIGENTUEMER_BIC}": daten.eigentuemerBic || "____________",
-    "{RUECKBAU_BETRAG}": daten.rueckbauBetrag || "___",
-    "{RUECKBAU_SATZ}": daten.rueckbauSatz || "8,00",
     "{ZUSATZVEREINBARUNGEN}": daten.zusatzvereinbarungen || "(keine)",
   };
 
@@ -50,7 +52,7 @@ function ersetzePlatzhalter(text, daten) {
 }
 
 // ============================================================
-// Daten aufbereiten
+// Eigentümer-Daten aufbereiten
 // ============================================================
 function buildDaten(formData, ergebnis) {
   const eig = formData.eigentuemer || {};
@@ -64,48 +66,41 @@ function buildDaten(formData, ergebnis) {
       : "_______________";
 
   const eigTypMap = {
-    Einzelperson: "Alleineigent\u00FCmer",
-    Ehepaar: "Miteigent\u00FCmer",
+    Einzelperson: "Alleineigentümer",
+    Ehepaar: "Miteigentümer",
     Erbengemeinschaft: "Sonstiges (Erbengemeinschaft)",
     GbR: "Sonstiges (GbR)",
     GmbH: "Sonstiges (GmbH)",
     Sonstige: "Sonstiges",
   };
-  const eigentuemerTyp = eigTypMap[eig.typ] || "Alleineigent\u00FCmer";
+  const eigentuemerTyp = eigTypMap[eig.typ] || "Alleineigentümer";
 
   const gb = formData.grundbuch || [];
   const grundbuchText = gb
     .map(
       (z) =>
-        `Grundbuchamt: ${z.grundbuchamt || "\u2013"} | Band: ${z.gbBand || "\u2013"} | Blatt: ${z.gbBlatt || "\u2013"} | Gemarkung: ${z.gemarkung || "\u2013"} | Flst.: ${z.flurNr || "\u2013"} | Fl\u00E4che: ${z.gesamtflaecheHa || "\u2013"} ha`
+        `Grundbuchamt: ${z.grundbuchamt || "–"} | Blatt: ${z.gbBlatt || "–"} | Gemarkung: ${z.gemarkung || "–"} | Flst.: ${z.flurNr || "–"}`
     )
     .join("\n");
-
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`];
 
   return {
     eigentuemerName: name,
     eigentuemerAdresse: adresse,
     eigentuemerTyp,
     grundbuchText,
-    bessFlaecheM2: formatZahl(ergebnis.bessFlaecheM2, 0),
-    kapazitaetMwh: formatZahl(ergebnis.kapazitaetMwh, 1),
-    leistungMw: formatZahl(ergebnis.leistungMw, 1),
-    pachtzinsJahr: formatEuro(gewaehltes.pachtzinsJahr),
-    pachtzinsWort: zahlInWort(gewaehltes.pachtzinsJahr),
-    steigerung: String(gewaehltes.steigerungProzent || 10),
+    grundstueckGroesse: formData.grundstueckGroesse || "___",
+    bessFlaecheM2: String(ergebnis.bessFlaecheM2 || "___"),
+    leistungMw: String(ergebnis.leistungMw || "___"),
+    kapazitaetMwh: String(ergebnis.kapazitaetMwh || "___"),
+    satzProM2: String(formData.satzProM2 || "8").replace(".", ","),
+    wertsicherung: String(formData.wertsicherungProzent || 10),
     vorhalteProzent: String(formData.vorhalteProzent || 50),
-    vorhalteBetrag: formatEuro(ergebnis.vorhalteverguetung.betragJahr),
+    rueckbauBetrag: formatEuro(ergebnis.rueckbau.buergschaftBetrag),
     laufzeitJahre: String(ergebnis.laufzeitJahre || 20),
     vertragsnummer: generiereVertragsnummer(),
     vertragsdatum: formatDatum(new Date()),
-    vertretenDurch: eig.vertretenDurch
-      ? `vertreten durch ${eig.vertretenDurch}`
-      : "vertreten durch den Gesch\u00E4ftsf\u00FChrer Herrn Levin Schober",
     eigentuemerIban: formData.eigentuemerIban || "________________________",
     eigentuemerBic: formData.eigentuemerBic || "____________",
-    rueckbauBetrag: formatEuro(ergebnis.rueckbau.buergschaftBetrag),
-    rueckbauSatz: String(formData.rueckbauSatzKwh || "8,00").replace(".", ","),
     zusatzvereinbarungen: formData.zusatzvereinbarungen || "(keine)",
   };
 }
@@ -119,54 +114,55 @@ export async function generateBESSPreisblattDocx(formData, ergebnis) {
 
   const eig = formData.eigentuemer || {};
   const partner = eig.partner || [];
-  const name = partner.map((p) => p.name).filter(Boolean).join(", ") || "\u2013";
+  const name = partner.map((p) => p.name).filter(Boolean).join(", ") || "–";
 
   const sections = [];
 
+  // Vertragsparteien
   sections.push({ type: "heading", text: "Vertragsparteien" });
   sections.push({
     type: "keyValue",
     entries: [
-      ["Grundst\u00FCckseigent\u00FCmer", name],
-      ["Eigent\u00FCmertyp", eig.typ || "\u2013"],
-      ["Eigentumsverh\u00E4ltnis", eig.eigentumsart || "\u2013"],
+      ["Grundstückseigentümer", name],
+      ["Eigentümertyp", eig.typ || "–"],
+      ["Grundstücksnutzer", "Elite PV GmbH"],
     ],
   });
   sections.push({ type: "spacing", size: 150 });
 
-  sections.push({ type: "heading", text: "BESS-Daten" });
+  // BESS-Daten
+  sections.push({ type: "heading", text: "BESS-Technische Daten" });
   sections.push({
     type: "keyValue",
     entries: [
-      ["Grundst\u00FCcksadresse", formData.grundstueckAdresse || "\u2013"],
-      ["BESS-Fl\u00E4che", `${formData.bessFlaecheM2 || 0} m\u00B2`],
-      ["Kapazit\u00E4t", `${formData.kapazitaetMwh || 0} MWh`],
-      ["Leistung", `${formData.leistungMw || 0} MW`],
-      ["Technologie", formData.technologie || "\u2013"],
-      ["Anwendung", formData.anwendung || "\u2013"],
-      ["Netzanschluss", formData.netzanschlussEbene || "\u2013"],
-      ["Container", `${formData.containerAnzahl || 0} St\u00FCck`],
+      ["BESS-Leistung", `${formData.leistungMw || 0} MW`],
+      ["BESS-Kapazität", `${formData.kapazitaetMwh || 0} MWh`],
+      ["C-Rate", ergebnis.kapazitaetMwh > 0 ? (ergebnis.leistungMw / ergebnis.kapazitaetMwh).toFixed(2) : "–"],
+      ["Technologie", formData.technologie || "–"],
+      ["BESS-Fläche", `${formData.bessFlaecheM2 || 0} m²`],
+      ["Netzanschluss", formData.netzanschlussEbene || "–"],
     ],
   });
   sections.push({ type: "spacing", size: 150 });
 
+  // Modellvergleich
   sections.push({ type: "heading", text: "Pachtmodell-Vergleich" });
   sections.push({
     type: "table",
-    headers: ["Modell", "Pacht/Jahr", `Summe ${ergebnis.laufzeitJahre} J.`],
+    headers: ["Modell", "Pacht/Jahr (1. Jahr)", `Summe ${ergebnis.laufzeitJahre} J.`],
     rows: [
       [
-        `${formData.gewaehlteModell === "A" ? "\u25B6 " : ""}A: Festpacht/m\u00B2`,
+        `${formData.gewaehlteModell === "A" ? "▶ " : ""}A: Festpacht/m²`,
         formatEuro(modellA.pachtzinsJahr),
         formatEuro(modellA.pachtGesamt),
       ],
       [
-        `${formData.gewaehlteModell === "B" ? "\u25B6 " : ""}B: Festpacht/MWh`,
+        `${formData.gewaehlteModell === "B" ? "▶ " : ""}B: Festpacht/MW`,
         formatEuro(modellB.pachtzinsJahr),
         formatEuro(modellB.pachtGesamt),
       ],
       [
-        `${formData.gewaehlteModell === "C" ? "\u25B6 " : ""}C: Hybrid`,
+        `${formData.gewaehlteModell === "C" ? "▶ " : ""}C: Revenue Share`,
         formatEuro(modellC.pachtzinsJahr),
         formatEuro(modellC.pachtGesamt),
       ],
@@ -174,21 +170,22 @@ export async function generateBESSPreisblattDocx(formData, ergebnis) {
   });
   sections.push({ type: "spacing", size: 150 });
 
+  // Gewähltes Modell
   sections.push({
     type: "highlight",
-    label: `GEW\u00C4HLTES MODELL: ${gewaehltes.modell}`,
-    mainText: `${formatEuro(gewaehltes.pachtzinsJahr)} / Jahr`,
-    subText: `Summe \u00FCber ${ergebnis.laufzeitJahre} Jahre: ${formatEuro(gewaehltes.pachtGesamt)}`,
+    label: `GEWÄHLTES MODELL: ${gewaehltes.modell}`,
+    mainText: `${formatEuro(gewaehltes.pachtzinsJahr)} / Jahr (1. Jahr)`,
+    subText: `Summe über ${ergebnis.laufzeitJahre} Jahre: ${formatEuro(gewaehltes.pachtGesamt)}`,
   });
   sections.push({ type: "spacing", size: 150 });
 
-  sections.push({ type: "heading", text: "Zus\u00E4tzliche Vereinbarungen" });
+  // Zusätzliche Vergütungen
+  sections.push({ type: "heading", text: "Zusätzliche Vergütungen" });
   sections.push({
     type: "keyValue",
     entries: [
-      ["Vorhalteverg\u00FCtung", `${formatEuro(vorhalteverguetung.betragJahr)} / Jahr (${vorhalteverguetung.prozent}% vor IBN)`],
-      ["R\u00FCckbaub\u00FCrgschaft", `${formatEuro(rueckbau.buergschaftBetrag)} (${formatZahl(rueckbau.kapazitaetKwh, 0)} kWh \u00D7 ${rueckbau.satzProKwh} \u20AC/kWh)`],
-      ["Steigerung ab BJ 11", `+${gewaehltes.steigerungProzent}%`],
+      ["Vorhaltevergütung", `${formatEuro(vorhalteverguetung.betragJahr)} / Jahr (${formData.vorhalteProzent || 50}% vor IBN)`],
+      ["Rückbaubürgschaft", `${formatEuro(rueckbau.buergschaftBetrag)} (${ergebnis.bessFlaecheM2} m² × ${formData.rueckbauSatzM2 || 25} €/m²)`],
     ],
   });
 
@@ -204,12 +201,12 @@ export async function generateBESSPreisblattDocx(formData, ergebnis) {
 // VERTRAG EXPORT
 // ============================================================
 export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
-  const platzhalterDaten = buildDaten(formData, ergebnis);
   const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`];
+  const platzhalterDaten = buildDaten(formData, ergebnis);
 
   const eig = formData.eigentuemer || {};
   const partner = eig.partner || [];
-  const name = partner.map((p) => p.name).filter(Boolean).join(", ") || "\u2013";
+  const name = partner.map((p) => p.name).filter(Boolean).join(", ") || "–";
 
   const sections = [];
 
@@ -222,7 +219,7 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
         spacing: { after: 200 },
         children: [
           new TextRun({
-            text: "FL\u00C4CHENNUTZUNGSVERTRAG",
+            text: "FLÄCHENNUTZUNGSVERTRAG",
             bold: true,
             size: 44,
             font: "DM Sans",
@@ -234,7 +231,7 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
         spacing: { after: 100 },
         children: [
           new TextRun({
-            text: "\u00FCber ein Grundst\u00FCck zur Installation und zum Betrieb",
+            text: "zum Zwecke der Installation und des Betriebes",
             size: 26,
             font: "DM Sans",
             color: "888888",
@@ -245,7 +242,7 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
         spacing: { after: 300 },
         children: [
           new TextRun({
-            text: "eines Batterie-Energiespeichersystems (BESS)",
+            text: "eines Batteriespeichersystems (BESS)",
             size: 26,
             font: "DM Sans",
             color: "888888",
@@ -270,55 +267,49 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
   // Vertragsparteien
   sections.push({ type: "heading", text: "Vertragsparteien" });
   const parteiEntries = [
-    ["Grundst\u00FCckseigent\u00FCmer", name],
+    ["Grundstückseigentümer", name],
     ["Adresse", platzhalterDaten.eigentuemerAdresse],
   ];
   if (eig.vertretenDurch) {
     parteiEntries.push(["Vertreten durch", eig.vertretenDurch]);
   }
-  const alleineig = eig.eigentumsart === "Alleineigent\u00FCmer";
-  const miteig = eig.eigentumsart === "Miteigent\u00FCmer";
-  const sonstiges = !alleineig && !miteig;
-  parteiEntries.push([
-    "Eigentumsverh\u00E4ltnis",
-    `${alleineig ? "\u2612" : "\u2610"} Alleineigent\u00FCmer   ${miteig ? "\u2612" : "\u2610"} Miteigent\u00FCmer   ${sonstiges ? "\u2612" : "\u2610"} Sonstiges (${eig.typ || "\u2013"})`,
-  ]);
   parteiEntries.push(["", ""]);
-  parteiEntries.push(["Grundst\u00FCcksnutzer", "Elite PV GmbH"]);
+  parteiEntries.push(["Grundstücksnutzer", "Elite PV GmbH"]);
   parteiEntries.push(["Adresse", "Lindenhof 4b, 92670 Windischeschenbach"]);
-  parteiEntries.push(["Gesch\u00E4ftsf\u00FChrer", "Levin Schober"]);
+  parteiEntries.push(["Geschäftsführer", "Levin Schober"]);
   sections.push({ type: "keyValue", entries: parteiEntries });
   sections.push({ type: "spacing", size: 200 });
 
-  // BESS-Objekt
-  sections.push({ type: "heading", text: "BESS-Objekt" });
+  // BESS-Daten
+  sections.push({ type: "heading", text: "BESS-Daten" });
   sections.push({
     type: "keyValue",
     entries: [
-      ["Grundst\u00FCcksadresse", formData.grundstueckAdresse || "\u2013"],
-      ["BESS-Fl\u00E4che", `ca. ${formatZahl(ergebnis.bessFlaecheM2, 0)} m\u00B2`],
-      ["Kapazit\u00E4t", `${formatZahl(ergebnis.kapazitaetMwh, 1)} MWh`],
-      ["Leistung", `${formatZahl(ergebnis.leistungMw, 1)} MW`],
-      ["Technologie", formData.technologie || "\u2013"],
-      ["Container", `${formData.containerAnzahl || 0} St\u00FCck`],
+      ["BESS-Leistung", `${ergebnis.leistungMw || 0} MW`],
+      ["BESS-Kapazität", `${ergebnis.kapazitaetMwh || 0} MWh`],
+      ["C-Rate", ergebnis.kapazitaetMwh > 0 ? (ergebnis.leistungMw / ergebnis.kapazitaetMwh).toFixed(2) : "–"],
+      ["Technologie", formData.technologie || "–"],
+      ["BESS-Fläche", `${ergebnis.bessFlaecheM2 || 0} m²`],
+      ["Netzanschluss", formData.netzanschlussEbene || "–"],
     ],
   });
   sections.push({ type: "spacing", size: 100 });
 
-  // Grundbuch
+  // Grundbuch-Tabelle
   const gb = formData.grundbuch || [];
   if (gb.length > 0 && gb[0].grundbuchamt) {
     sections.push({ type: "heading", text: "Grundbuchdaten" });
     sections.push({
       type: "table",
-      headers: ["Grundbuchamt", "Band", "Blatt", "Gemarkung", "Flst.", "Fl\u00E4che (ha)"],
+      headers: ["Grundbuchamt", "Band", "Blatt", "Gemarkung", "Flst.", "Gesamt (ha)", "Pacht (ha)"],
       rows: gb.map((z) => [
-        z.grundbuchamt || "\u2013",
-        z.gbBand || "\u2013",
-        z.gbBlatt || "\u2013",
-        z.gemarkung || "\u2013",
-        z.flurNr || "\u2013",
-        z.gesamtflaecheHa || "\u2013",
+        z.grundbuchamt || "–",
+        z.gbBand || "–",
+        z.gbBlatt || "–",
+        z.gemarkung || "–",
+        z.flurNr || "–",
+        z.gesamtflaecheHa || "–",
+        z.pachtflaecheHa || "–",
       ]),
     });
     sections.push({ type: "spacing", size: 200 });
@@ -329,25 +320,26 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
   sections.push({ type: "keyValue", entries: klauseln.map((k) => [k.titel, ""]) });
   sections.push({ type: "pageBreak" });
 
-  // Verg\u00FCtungs\u00FCbersicht
-  sections.push({ type: "heading", text: "Verg\u00FCtungs\u00FCbersicht" });
+  // Vergütungsübersicht
+  sections.push({ type: "heading", text: "Vergütungsübersicht" });
   sections.push({
     type: "highlight",
-    label: `Gew\u00E4hltes Modell: ${gewaehltes.modell}`,
-    mainText: `${formatEuro(gewaehltes.pachtzinsJahr)} / Jahr`,
-    subText: `${formatEuro(gewaehltes.pachtzinsMonat)} / Monat | Laufzeit ${ergebnis.laufzeitJahre} Jahre: ${formatEuro(gewaehltes.pachtGesamt)}`,
+    label: `Gewähltes Modell: ${gewaehltes.modell}`,
+    mainText: `${formatEuro(gewaehltes.pachtzinsJahr)} / Jahr (1. Betriebsjahr)`,
+    subText: `Summe über ${ergebnis.laufzeitJahre} Jahre: ${formatEuro(gewaehltes.pachtGesamt)}`,
   });
   sections.push({ type: "spacing", size: 100 });
+
   sections.push({
     type: "keyValue",
     entries: [
-      ["Vorhalteverg\u00FCtung", `${formatEuro(ergebnis.vorhalteverguetung.betragJahr)} / Jahr`],
-      ["R\u00FCckbaub\u00FCrgschaft", formatEuro(ergebnis.rueckbau.buergschaftBetrag)],
+      ["Vorhaltevergütung", `${formatEuro(ergebnis.vorhalteverguetung.betragJahr)} / Jahr`],
+      ["Rückbaubürgschaft", `${formatEuro(ergebnis.rueckbau.buergschaftBetrag)}`],
     ],
   });
   sections.push({ type: "spacing", size: 200 });
 
-  // Klauseln
+  // Klauseln mit Platzhaltern
   const ersetzte = klauseln.map((k) => ({
     ...k,
     text: ersetzePlatzhalter(k.text, platzhalterDaten),
@@ -368,17 +360,22 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
       ],
     }),
     ...[
-      "Anlage 1 \u2013 Vorl\u00E4ufiger Lageplan",
-      "Anlage 2 \u2013 Grundbuchauszug",
-      "Anlage 3 \u2013 Vollmacht Einholung Grundbuchauszug",
-      "Anlage 4 \u2013 Muster Bestellungsurkunde Dienstbarkeit",
-      "Anlage 5 \u2013 Muster Bestellung Vormerkung",
+      "Anlage 1 – Vorläufiger Lageplan",
+      "Anlage 2 – Grundbuchauszug",
+      "Anlage 3 – Vollmacht Einholung Grundbuchauszug",
+      "Anlage 4 – Muster Bestellungsurkunde Dienstbarkeit",
+      "Anlage 5 – Muster Bestellung Vormerkung",
     ].map(
       (a) =>
         new Paragraph({
           spacing: { after: 60 },
           children: [
-            new TextRun({ text: a, size: 20, font: "DM Sans", color: "444444" }),
+            new TextRun({
+              text: a,
+              size: 20,
+              font: "DM Sans",
+              color: "444444",
+            }),
           ],
         })
     ),
@@ -398,7 +395,7 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
   });
 
   await generateDocx({
-    title: "FL\u00C4CHENNUTZUNGSVERTRAG BESS",
+    title: "FLÄCHENNUTZUNGSVERTRAG BESS",
     subtitle: `${name} | Elite PV GmbH`,
     sections: [
       ...sections,
@@ -406,7 +403,7 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
       { type: "paragraphs", items: [standParagraph] },
     ],
     klauseln: ersetzte,
-    signatureParties: ["Elite PV GmbH (Grundst\u00FCcksnutzer)", `${name} (Grundst\u00FCckseigent\u00FCmer)`],
+    signatureParties: ["Elite PV GmbH (Grundstücksnutzer)", `${name} (Grundstückseigentümer)`],
     fileName: `Flaechennutzungsvertrag_BESS_${(name || "Kunde").replace(/[\s,]+/g, "_")}_Elite_PV.docx`,
   });
 }
