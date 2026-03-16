@@ -3,9 +3,15 @@ import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import {
   berechneFreiflaeche,
+  berechneFairScore,
   NUTZUNGSARTEN,
   BODENKLASSEN,
   NETZANSCHLUSS_EBENEN,
+  PACHTSTATUS_OPTIONEN,
+  BEWUCHS_OPTIONEN,
+  NEIGUNG_RICHTUNGEN,
+  VERMARKTUNGSARTEN,
+  AUSGLEICH_TYPEN,
 } from "./freiflaecheCalc";
 import { FREIFLAECHE_KLAUSELN } from "./freiflaecheClauses";
 import { getKlauseln } from "../../lib/klauselStore";
@@ -144,15 +150,41 @@ export default function FreiflaecheGenerator() {
     zusatzvereinbarungen: "",
   });
 
+  // Bewertung für Fairen Pachtpreis
+  const [bewertung, setBewertung] = useState({
+    grz: 0.6,
+    lagerplatz: false,
+    pachtstatus: "Kein Pachtvertrag",
+    bewuchs: "Wenig (vereinzelt Büsche)",
+    ausgleichsflaecheHa: 0,
+    ausgleichstyp: "Keine Ausgleichsflächen",
+    zuwegungFeldweg: 0,
+    zuwegungFreiflaeche: 0,
+    bauleiterScore: 7,
+    neigungGrad: 0,
+    neigungRichtung: "Flach (< 3°)",
+    vermarktungsart: "EEG-Ausschreibung",
+    einspeiseverguetung: 5.5,
+    nvpEntfernungKm: 2,
+  });
+
+  const updateBewertung = (key) => (value) => {
+    setBewertung((prev) => ({ ...prev, [key]: value }));
+  };
+
   const update = (key) => (value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
+
+  // Fair-Score (live berechnet)
+  const fairScore = useMemo(() => berechneFairScore(bewertung), [bewertung]);
 
   // Kalkulation
   const kalkulationsDaten = {
     ...formData,
     eigentuemer,
     grundbuch,
+    bewertung,
   };
   const ergebnis = useMemo(() => berechneFreiflaeche(kalkulationsDaten), [
     formData.pachtflaecheHa,
@@ -173,6 +205,7 @@ export default function FreiflaecheGenerator() {
     formData.speicherflaecheM2,
     formData.speicherSatzM2,
     formData.rueckbauSatzKw,
+    bewertung,
   ]);
 
   const gewaehltes = ergebnis[`modell${formData.gewaehlteModell}`];
@@ -202,7 +235,7 @@ export default function FreiflaecheGenerator() {
   const alleMeldungen = [...fehler.map((f) => "❌ " + f), ...warnungen];
   const exportGesperrt = fehler.length > 0;
 
-  const tabNamen = ["Eigentümer", "Grundstück", "Fläche & Technik", "Pachtmodell", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Eigentümer", "Grundstück", "Fläche & Technik", "Bewertung", "Pachtmodell", "Ergebnis", "Vertrag"];
 
   // DOCX-Export
   const handleDocxExport = async (typ) => {
@@ -405,9 +438,304 @@ export default function FreiflaecheGenerator() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 3: Pachtmodell */}
+      {/* TAB 3: Bewertung (Fairer Pachtpreis) */}
       {/* ============================================================ */}
       {activeTab === 3 && (
+        <>
+          <Section title="Standort-Bewertung – Fairer Pachtpreis" icon="⚖️">
+            <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14, lineHeight: 1.5 }}>
+              Alle Parameter fließen in einen Standort-Score ein, der den Basispachtpreis nach oben oder unten anpasst.
+              Der Score berücksichtigt Baukosten, Ertragsminderungen und Projektaufwand.
+            </p>
+
+            {/* Score-Anzeige */}
+            <div style={{
+              background: `linear-gradient(135deg, ${COLORS.dark}, ${COLORS.grey})`,
+              borderRadius: 11,
+              padding: "18px 22px",
+              color: COLORS.white,
+              marginBottom: 16,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: COLORS.mid, textTransform: "uppercase", letterSpacing: 0.5 }}>Standort-Score</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: fairScore.score >= 60 ? COLORS.green : fairScore.score >= 40 ? COLORS.yellow : COLORS.red }}>
+                    {fairScore.score} / 100
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 11, color: COLORS.mid, textTransform: "uppercase", letterSpacing: 0.5 }}>Pachtpreis-Anpassung</div>
+                  <div style={{
+                    fontSize: 24,
+                    fontWeight: 800,
+                    color: fairScore.gesamtAnpassung >= 0 ? COLORS.green : COLORS.red,
+                  }}>
+                    {fairScore.gesamtAnpassung >= 0 ? "+" : ""}{fairScore.gesamtAnpassung}%
+                  </div>
+                </div>
+              </div>
+              {/* Score-Balken */}
+              <div style={{ background: "rgba(255,255,255,.15)", borderRadius: 6, height: 10, overflow: "hidden" }}>
+                <div style={{
+                  width: `${fairScore.score}%`,
+                  height: "100%",
+                  borderRadius: 6,
+                  background: fairScore.score >= 60 ? COLORS.green : fairScore.score >= 40 ? COLORS.yellow : COLORS.red,
+                  transition: "width 0.3s",
+                }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: COLORS.mid, marginTop: 3 }}>
+                <span>Ungünstig</span>
+                <span>Neutral</span>
+                <span>Optimal</span>
+              </div>
+            </div>
+          </Section>
+
+          {/* Grundstücks-Parameter */}
+          <Section title="Grundstücks-Parameter" icon="📐">
+            <div style={styles.grid2}>
+              <TextInput
+                label="GRZ (Grundflächenzahl)"
+                value={bewertung.grz}
+                onChange={updateBewertung("grz")}
+                type="number"
+                min={0}
+                max={1}
+                placeholder="z.B. 0.6"
+              />
+              <SelectInput
+                label="Pachtstatus"
+                value={bewertung.pachtstatus}
+                onChange={updateBewertung("pachtstatus")}
+                options={PACHTSTATUS_OPTIONEN}
+              />
+            </div>
+            <div style={{ ...styles.grid2, marginTop: 10 }}>
+              <SelectInput
+                label="Baum-/Buschbesatz"
+                value={bewertung.bewuchs}
+                onChange={updateBewertung("bewuchs")}
+                options={BEWUCHS_OPTIONEN}
+              />
+              <div>
+                <label style={styles.label}>Lagerplatz vorhanden</label>
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  <button
+                    type="button"
+                    style={styles.toggle(bewertung.lagerplatz)}
+                    onClick={() => updateBewertung("lagerplatz")(true)}
+                  >
+                    Ja
+                  </button>
+                  <button
+                    type="button"
+                    style={styles.toggle(!bewertung.lagerplatz)}
+                    onClick={() => updateBewertung("lagerplatz")(false)}
+                  >
+                    Nein
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Section>
+
+          {/* Geländeneigung */}
+          <Section title="Geländeneigung" icon="⛰️">
+            <div style={styles.grid2}>
+              <SelectInput
+                label="Ausrichtung Gefälle"
+                value={bewertung.neigungRichtung}
+                onChange={updateBewertung("neigungRichtung")}
+                options={NEIGUNG_RICHTUNGEN}
+              />
+              <TextInput
+                label="Neigungswinkel"
+                value={bewertung.neigungGrad}
+                onChange={updateBewertung("neigungGrad")}
+                type="number"
+                suffix="°"
+                min={0}
+                max={45}
+              />
+            </div>
+            {bewertung.neigungRichtung === "Nord" && bewertung.neigungGrad > 5 && (
+              <div style={{ ...styles.warnung, marginTop: 8 }}>
+                {"Nordneigung > 5° reduziert den Ertrag erheblich und senkt den fairen Pachtpreis deutlich."}
+              </div>
+            )}
+          </Section>
+
+          {/* Ausgleichsflächen */}
+          <Section title="Ausgleichsflächen" icon="🌿">
+            <div style={styles.grid2}>
+              <SelectInput
+                label="Art der Ausgleichsmaßnahme"
+                value={bewertung.ausgleichstyp}
+                onChange={updateBewertung("ausgleichstyp")}
+                options={AUSGLEICH_TYPEN}
+              />
+              {bewertung.ausgleichstyp !== "Keine Ausgleichsflächen" && (
+                <TextInput
+                  label="Ausgleichsfläche"
+                  value={bewertung.ausgleichsflaecheHa}
+                  onChange={updateBewertung("ausgleichsflaecheHa")}
+                  type="number"
+                  suffix="ha"
+                  min={0}
+                />
+              )}
+            </div>
+          </Section>
+
+          {/* Zuwegung */}
+          <Section title="Zuwegung / Aufschotterung" icon="🛤️">
+            <div style={styles.grid2}>
+              <TextInput
+                label="Aufschotterung Feldweg"
+                value={bewertung.zuwegungFeldweg}
+                onChange={updateBewertung("zuwegungFeldweg")}
+                type="number"
+                suffix="Meter"
+                min={0}
+                placeholder="0"
+              />
+              <TextInput
+                label="Neuer Weg über Freifläche"
+                value={bewertung.zuwegungFreiflaeche}
+                onChange={updateBewertung("zuwegungFreiflaeche")}
+                type="number"
+                suffix="Meter"
+                min={0}
+                placeholder="0"
+              />
+            </div>
+            <div style={{ marginTop: 6, fontSize: 11, color: COLORS.mid }}>
+              Freiflächenwege werden 3× stärker gewichtet als Feldwegaufschotterung.
+            </div>
+          </Section>
+
+          {/* Vermarktung */}
+          <Section title="Vermarktung & Netzanschluss" icon="💰">
+            <div style={styles.grid2}>
+              <SelectInput
+                label="Vermarktungsart"
+                value={bewertung.vermarktungsart}
+                onChange={updateBewertung("vermarktungsart")}
+                options={VERMARKTUNGSARTEN}
+              />
+              <TextInput
+                label="Erwartete Einspeisevergütung"
+                value={bewertung.einspeiseverguetung}
+                onChange={updateBewertung("einspeiseverguetung")}
+                type="number"
+                suffix="ct/kWh"
+                min={3}
+                max={15}
+              />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <TextInput
+                label="Entfernung Netzverknüpfungspunkt"
+                value={bewertung.nvpEntfernungKm}
+                onChange={updateBewertung("nvpEntfernungKm")}
+                type="number"
+                suffix="km"
+                min={0}
+              />
+            </div>
+          </Section>
+
+          {/* Bauleiter-Score */}
+          <Section title="Bauleiter-Gesamtbewertung" icon="👷">
+            <div style={{ maxWidth: 400 }}>
+              <label style={styles.label}>Gesamtbewertung des Projekts (1 = schwierig, 10 = optimal)</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6 }}>
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  step={1}
+                  value={bewertung.bauleiterScore}
+                  onChange={(e) => updateBewertung("bauleiterScore")(parseInt(e.target.value))}
+                  style={{ flex: 1 }}
+                />
+                <span style={{
+                  fontWeight: 800,
+                  fontSize: 22,
+                  color: bewertung.bauleiterScore >= 7 ? COLORS.green : bewertung.bauleiterScore >= 4 ? COLORS.yellow : COLORS.red,
+                  minWidth: 40,
+                  textAlign: "center",
+                }}>
+                  {bewertung.bauleiterScore}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: COLORS.mid, marginTop: 2 }}>
+                <span>Schwierig</span>
+                <span>Optimal</span>
+              </div>
+            </div>
+          </Section>
+
+          {/* Faktor-Übersicht */}
+          <Section title="Faktor-Übersicht" icon="📊">
+            <div style={{ fontSize: 12 }}>
+              {fairScore.faktoren.map((f, i) => (
+                <div key={i} style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "7px 0",
+                  borderBottom: i < fairScore.faktoren.length - 1 ? "1px solid #f0f0f0" : "none",
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 12.5 }}>{f.name}</div>
+                    <div style={{ fontSize: 11, color: COLORS.mid }}>{f.wert} – {f.erklaerung}</div>
+                  </div>
+                  <div style={{
+                    fontWeight: 700,
+                    fontSize: 13,
+                    minWidth: 50,
+                    textAlign: "right",
+                    color: f.anpassung > 0 ? COLORS.green : f.anpassung < 0 ? COLORS.red : COLORS.mid,
+                  }}>
+                    {f.anpassung > 0 ? "+" : ""}{f.anpassung}%
+                  </div>
+                </div>
+              ))}
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 0 4px",
+                borderTop: `2px solid ${COLORS.dark}`,
+                marginTop: 4,
+              }}>
+                <div style={{ fontWeight: 800, fontSize: 13 }}>Gesamt-Anpassung</div>
+                <div style={{
+                  fontWeight: 800,
+                  fontSize: 15,
+                  color: fairScore.gesamtAnpassung >= 0 ? COLORS.green : COLORS.red,
+                }}>
+                  {fairScore.gesamtAnpassung >= 0 ? "+" : ""}{fairScore.gesamtAnpassung}% (Faktor: {fairScore.multiplikator.toFixed(2)}×)
+                </div>
+              </div>
+              {fairScore.gesamtAnpassungUnbegrenzt !== fairScore.gesamtAnpassung && (
+                <div style={{ fontSize: 10.5, color: COLORS.mid, marginTop: 4 }}>
+                  Unbegrenzte Summe: {fairScore.gesamtAnpassungUnbegrenzt}% – begrenzt auf ±30%
+                </div>
+              )}
+            </div>
+          </Section>
+
+          <NavButtons onPrev={() => setActiveTab(2)} onNext={() => setActiveTab(4)} />
+        </>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 4: Pachtmodell */}
+      {/* ============================================================ */}
+      {activeTab === 4 && (
         <>
           {/* Allgemeine Parameter */}
           <Section title="Vertragslaufzeit & Wertsicherung" icon="⚙️">
@@ -586,17 +914,17 @@ export default function FreiflaecheGenerator() {
           </Section>
 
           <NavButtons
-            onPrev={() => setActiveTab(2)}
-            onNext={() => setActiveTab(4)}
+            onPrev={() => setActiveTab(3)}
+            onNext={() => setActiveTab(5)}
             nextLabel="Ergebnis →"
           />
         </>
       )}
 
       {/* ============================================================ */}
-      {/* TAB 4: Ergebnis */}
+      {/* TAB 5: Ergebnis */}
       {/* ============================================================ */}
-      {activeTab === 4 && (
+      {activeTab === 5 && (
         <>
           {/* Gewähltes Modell */}
           <ResultBox label={`GEWÄHLTES MODELL: ${gewaehltes.modell.toUpperCase()}`}>
@@ -613,6 +941,55 @@ export default function FreiflaecheGenerator() {
               />
             </ResultGrid>
           </ResultBox>
+
+          {/* Fairer Pachtpreis */}
+          {gewaehltes.fairPachtzinsJahr && (
+            <div style={{
+              ...styles.card,
+              marginTop: 12,
+              borderLeft: `4px solid ${fairScore.gesamtAnpassung >= 0 ? COLORS.green : COLORS.red}`,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>
+                  ⚖️ Fairer Pachtpreis (Score: {fairScore.score}/100)
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: fairScore.gesamtAnpassung >= 0 ? COLORS.green : COLORS.red,
+                  background: fairScore.gesamtAnpassung >= 0 ? "#E8F5E9" : "#FFEBEE",
+                  padding: "2px 10px",
+                  borderRadius: 4,
+                }}>
+                  {fairScore.gesamtAnpassung >= 0 ? "+" : ""}{fairScore.gesamtAnpassung}%
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Basis/Jahr</div>
+                  <div style={{ fontSize: 13, color: COLORS.mid, textDecoration: "line-through" }}>
+                    {formatEuro(gewaehltes.pachtzinsJahr)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Fair/Jahr</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.dark }}>
+                    {formatEuro(gewaehltes.fairPachtzinsJahr)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase" }}>Fair/Monat</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.dark }}>
+                    {formatEuro(gewaehltes.fairPachtzinsMonat)}
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: COLORS.mid }}>
+                Empfohlener Pachtpreis basierend auf {fairScore.faktoren.length} Standortfaktoren.
+                Gesamtlaufzeit fair: {formatEuro(gewaehltes.fairPachtGesamt)}
+              </div>
+            </div>
+          )}
 
           {/* Zusatzvergütungen */}
           <div style={{ ...styles.card, marginTop: 12 }}>
@@ -661,7 +1038,10 @@ export default function FreiflaecheGenerator() {
                     {key}: {m.modell}
                   </span>
                   <span style={{ fontWeight: 600 }}>
-                    {formatEuro(m.pachtzinsJahr)}/J. | {formatEuro(m.pachtGesamt)} ({ergebnis.laufzeitJahre}J.)
+                    {m.fairPachtzinsJahr
+                      ? <>{formatEuro(m.fairPachtzinsJahr)}/J. <span style={{ color: COLORS.mid, fontWeight: 400, fontSize: 11 }}>(Basis: {formatEuro(m.pachtzinsJahr)})</span></>
+                      : <>{formatEuro(m.pachtzinsJahr)}/J. | {formatEuro(m.pachtGesamt)} ({ergebnis.laufzeitJahre}J.)</>
+                    }
                   </span>
                 </div>
               );
@@ -715,7 +1095,7 @@ export default function FreiflaecheGenerator() {
           )}
 
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
-            <button style={styles.btnOutline} onClick={() => setActiveTab(3)}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(4)}>
               ← Modell ändern
             </button>
             <button
@@ -725,7 +1105,7 @@ export default function FreiflaecheGenerator() {
             >
               Preisblatt DOCX
             </button>
-            <button style={styles.btnBlue} onClick={() => setActiveTab(5)}>
+            <button style={styles.btnBlue} onClick={() => setActiveTab(6)}>
               Vertrag →
             </button>
           </div>
@@ -733,9 +1113,9 @@ export default function FreiflaecheGenerator() {
       )}
 
       {/* ============================================================ */}
-      {/* TAB 5: Vertrag */}
+      {/* TAB 6: Vertrag */}
       {/* ============================================================ */}
-      {activeTab === 5 && (
+      {activeTab === 6 && (
         <>
           <Section title="Gestattungsvertrag bearbeiten" icon="📝">
             <ClauseEditor
@@ -752,7 +1132,7 @@ export default function FreiflaecheGenerator() {
           )}
 
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
-            <button style={styles.btnOutline} onClick={() => setActiveTab(4)}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(5)}>
               ← Ergebnis
             </button>
             <button
