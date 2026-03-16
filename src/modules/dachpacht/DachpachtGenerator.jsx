@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, memo } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import {
@@ -28,11 +28,12 @@ import ClauseEditor from "../../components/ClauseEditor";
 import OwnerFields, { createDefaultEigentuemer } from "../../components/OwnerFields";
 import LandRegisterFields, { createDefaultGrundbuch } from "../../components/LandRegisterFields";
 import WarningBanner from "../../components/WarningBanner";
+import { useToast } from "../../components/Toast";
 
 // ============================================================
 // MODELL-KARTE
 // ============================================================
-function ModellKarte({ modell, aktiv, onClick, nr }) {
+const ModellKarte = memo(function ModellKarte({ modell, aktiv, onClick, nr }) {
   const farben = { 1: COLORS.yellow, 2: COLORS.blue, 3: COLORS.green };
   const farbe = farben[nr] || COLORS.yellow;
   return (
@@ -89,12 +90,13 @@ function ModellKarte({ modell, aktiv, onClick, nr }) {
       </div>
     </div>
   );
-}
+});
 
 // ============================================================
 // MAIN GENERATOR
 // ============================================================
 export default function DachpachtGenerator() {
+  const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
@@ -221,7 +223,7 @@ export default function DachpachtGenerator() {
         await generateDachpachtVertragDocx(exportData, ergebnis, klauseln);
       }
     } catch (error) {
-      alert("DOCX-Fehler: " + error.message);
+      showToast("DOCX-Fehler: " + error.message, "error");
     }
     setIsGenerating(false);
   };
@@ -710,7 +712,7 @@ export default function DachpachtGenerator() {
               onClick={() => handleDocxExport("vertrag")}
               disabled={isGenerating || exportGesperrt}
             >
-              {isGenerating ? "⏳" : "📄"} Vertrag als DOCX
+              {isGenerating ? "Wird erstellt\u2026" : "📄 Vertrag als DOCX"}
             </button>
           </div>
         </>

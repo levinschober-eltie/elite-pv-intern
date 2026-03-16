@@ -12,8 +12,10 @@ import DetailRow from "../../components/DetailRow";
 import ClauseEditor from "../../components/ClauseEditor";
 import WarningBanner from "../../components/WarningBanner";
 import { generateWartungDocx } from "./wartungDocxExport";
+import { useToast } from "../../components/Toast";
 
 export default function WartungGenerator() {
+  const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
@@ -83,7 +85,7 @@ export default function WartungGenerator() {
     try {
       await generateWartungDocx(formData, ergebnis, mitVertrag ? klauseln : null);
     } catch (error) {
-      alert("DOCX-Fehler: " + error.message);
+      showToast("DOCX-Fehler: " + error.message, "error");
     }
     setIsGenerating(false);
   };
@@ -444,7 +446,7 @@ export default function WartungGenerator() {
               onClick={() => handleDocxExport(true)}
               disabled={isGenerating}
             >
-              {isGenerating ? "⏳" : "📄"} Vertrag als DOCX
+              {isGenerating ? "Wird erstellt\u2026" : "📄 Vertrag als DOCX"}
             </button>
           </div>
         </>

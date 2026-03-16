@@ -1,5 +1,6 @@
 import React from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
+import { ToastProvider } from "./components/Toast";
 import Layout from "./components/Layout";
 import Dashboard from "./modules/dashboard/Dashboard";
 import WartungGenerator from "./modules/wartung/WartungGenerator";
@@ -29,6 +30,7 @@ function KundenPlaceholder() {
 
 export default function App() {
   return (
+    <ToastProvider>
     <HashRouter>
       <Routes>
         <Route element={<Layout />}>
@@ -41,5 +43,6 @@ export default function App() {
         </Route>
       </Routes>
     </HashRouter>
+    </ToastProvider>
   );
 }

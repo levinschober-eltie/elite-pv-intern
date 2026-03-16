@@ -18,3 +18,9 @@ export const formatFlaeche = (value, einheit = "m²") =>
 
 export const formatZahl = (value, dezimal = 0) =>
   Number(value).toLocaleString("de-DE", { minimumFractionDigits: dezimal, maximumFractionDigits: dezimal });
+
+export const zahlInWort = (betrag) =>
+  Math.floor(betrag).toLocaleString("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });

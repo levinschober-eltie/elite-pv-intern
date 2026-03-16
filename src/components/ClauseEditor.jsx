@@ -20,8 +20,9 @@ export default function ClauseEditor({ klauseln, setKlauseln, defaultKlauseln })
       </p>
       {klauseln.map((klausel) => (
         <div key={klausel.id} style={styles.clauseBox}>
-          <div style={styles.clauseTitle}>{klausel.titel}</div>
+          <label htmlFor={`clause-${klausel.id}`} style={styles.clauseTitle}>{klausel.titel}</label>
           <textarea
+            id={`clause-${klausel.id}`}
             style={styles.clauseTextarea}
             value={klausel.text}
             onChange={(e) => updateKlausel(klausel.id, e.target.value)}

@@ -2,6 +2,8 @@
 // DACHPACHT – Kalkulation (3 Modelle)
 // ============================================================
 
+const rund2 = (v) => Math.round(v * 100) / 100;
+
 // kWp-Faktoren pro m² nach Dachtyp
 export const DACHTYP_FAKTOREN = {
   Flachdach:          10,   // 1 kWp pro 10 m²
@@ -44,15 +46,15 @@ function berechneModell1(params) {
     laufzeitJahre = 20,
   } = params;
 
-  const pachtzinsJahr = leistungKwp * satzProKwp;
-  const pachtzinsMonat = pachtzinsJahr / 12;
+  const pachtzinsJahr = rund2(leistungKwp * satzProKwp);
+  const pachtzinsMonat = rund2(pachtzinsJahr / 12);
 
-  // 20-Jahres-Summe mit Preisanpassung
+  // Laufzeit-Summe mit Preisanpassung
   let summe20 = 0;
   const jahresWerte = [];
   for (let j = 0; j < laufzeitJahre; j++) {
     const faktor = Math.pow(1 + preisanpassungProzent / 100, j);
-    const jahresPacht = pachtzinsJahr * faktor;
+    const jahresPacht = rund2(pachtzinsJahr * faktor);
     summe20 += jahresPacht;
     jahresWerte.push({ jahr: j + 1, betrag: jahresPacht });
   }
@@ -62,7 +64,7 @@ function berechneModell1(params) {
     modellNr: 1,
     pachtzinsJahr,
     pachtzinsMonat,
-    pachtzins20Jahre: summe20,
+    pachtzins20Jahre: rund2(summe20),
     satzProKwp,
     preisanpassungProzent,
     jahresWerte,
@@ -82,15 +84,15 @@ function berechneModell2(params) {
     laufzeitJahre = 20,
   } = params;
 
-  const jahresertragKwh = leistungKwp * spezifischerErtrag;
-  const pachtzinsJahr = jahresertragKwh * (strompreisCentKwh / 100) * (prozentsatz / 100);
-  const pachtzinsMonat = pachtzinsJahr / 12;
+  const jahresertragKwh = rund2(leistungKwp * spezifischerErtrag);
+  const pachtzinsJahr = rund2(jahresertragKwh * (strompreisCentKwh / 100) * (prozentsatz / 100));
+  const pachtzinsMonat = rund2(pachtzinsJahr / 12);
 
   let summe20 = 0;
   const jahresWerte = [];
   for (let j = 0; j < laufzeitJahre; j++) {
     const faktor = Math.pow(1 + preisanpassungProzent / 100, j);
-    const jahresPacht = pachtzinsJahr * faktor;
+    const jahresPacht = rund2(pachtzinsJahr * faktor);
     summe20 += jahresPacht;
     jahresWerte.push({ jahr: j + 1, betrag: jahresPacht });
   }
@@ -100,7 +102,7 @@ function berechneModell2(params) {
     modellNr: 2,
     pachtzinsJahr,
     pachtzinsMonat,
-    pachtzins20Jahre: summe20,
+    pachtzins20Jahre: rund2(summe20),
     jahresertragKwh,
     strompreisCentKwh,
     prozentsatz,
@@ -121,14 +123,14 @@ function berechneModell3(params) {
     laufzeitJahre = 20,
   } = params;
 
-  const pachtzinsJahr = nutzbareDachflaeche * satzProM2;
-  const pachtzinsMonat = pachtzinsJahr / 12;
+  const pachtzinsJahr = rund2(nutzbareDachflaeche * satzProM2);
+  const pachtzinsMonat = rund2(pachtzinsJahr / 12);
 
   let summe20 = 0;
   const jahresWerte = [];
   for (let j = 0; j < laufzeitJahre; j++) {
     const faktor = Math.pow(1 + preisanpassungProzent / 100, j);
-    const jahresPacht = pachtzinsJahr * faktor;
+    const jahresPacht = rund2(pachtzinsJahr * faktor);
     summe20 += jahresPacht;
     jahresWerte.push({ jahr: j + 1, betrag: jahresPacht });
   }
@@ -138,7 +140,7 @@ function berechneModell3(params) {
     modellNr: 3,
     pachtzinsJahr,
     pachtzinsMonat,
-    pachtzins20Jahre: summe20,
+    pachtzins20Jahre: rund2(summe20),
     satzProM2,
     nutzbareDachflaeche,
     preisanpassungProzent,

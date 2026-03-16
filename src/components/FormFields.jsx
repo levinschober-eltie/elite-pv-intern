@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useId } from "react";
 import { styles, COLORS } from "../theme";
 
 // ============================================================
 // FORM FIELD WRAPPER
 // ============================================================
-export const FormField = ({ label, children }) => (
+export const FormField = ({ label, htmlFor, children }) => (
   <div>
-    <label style={styles.label}>{label}</label>
+    <label style={styles.label} htmlFor={htmlFor}>{label}</label>
     {children}
   </div>
 );
@@ -23,84 +23,101 @@ export const TextInput = ({
   suffix,
   error,
   ...rest
-}) => (
-  <FormField label={label}>
-    <div style={{ position: "relative" }}>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) =>
-          onChange(
-            type === "number"
-              ? e.target.value === ""
-                ? ""
-                : +e.target.value
-              : e.target.value
-          )
-        }
-        placeholder={placeholder}
-        style={{
-          ...styles.input,
-          paddingRight: suffix ? 36 : 9,
-          borderColor: error ? COLORS.red : undefined,
-        }}
-        onFocus={(e) => (e.target.style.borderColor = COLORS.blue)}
-        onBlur={(e) => (e.target.style.borderColor = error ? COLORS.red : "#ddd")}
-        step={type === "number" ? "any" : undefined}
-        {...rest}
-      />
-      {suffix && (
-        <span
+}) => {
+  const id = useId();
+  const errorId = id + "-error";
+  return (
+    <FormField label={label} htmlFor={id}>
+      <div style={{ position: "relative" }}>
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={(e) =>
+            onChange(
+              type === "number"
+                ? e.target.value === ""
+                  ? ""
+                  : +e.target.value
+                : e.target.value
+            )
+          }
+          placeholder={placeholder}
           style={{
-            position: "absolute",
-            right: 7,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: 10.5,
-            color: COLORS.mid,
+            ...styles.input,
+            paddingRight: suffix ? 36 : 9,
+            borderColor: error ? COLORS.red : undefined,
           }}
-        >
-          {suffix}
-        </span>
-      )}
-    </div>
-    {error && <div style={styles.fehler}>{error}</div>}
-  </FormField>
-);
+          onFocus={(e) => (e.target.style.borderColor = COLORS.blue)}
+          onBlur={(e) => (e.target.style.borderColor = error ? COLORS.red : "#ddd")}
+          step={type === "number" ? "any" : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          {...rest}
+        />
+        {suffix && (
+          <span
+            style={{
+              position: "absolute",
+              right: 7,
+              top: "50%",
+              transform: "translateY(-50%)",
+              fontSize: 10.5,
+              color: COLORS.mid,
+            }}
+          >
+            {suffix}
+          </span>
+        )}
+      </div>
+      {error && <div id={errorId} role="alert" style={styles.fehler}>{error}</div>}
+    </FormField>
+  );
+};
 
 // ============================================================
 // SELECT INPUT
 // ============================================================
-export const SelectInput = ({ label, value, onChange, options }) => (
-  <FormField label={label}>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={styles.select}
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
-      ))}
-    </select>
-  </FormField>
-);
+export const SelectInput = ({ label, value, onChange, options, error }) => {
+  const id = useId();
+  return (
+    <FormField label={label} htmlFor={id}>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={styles.select}
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </FormField>
+  );
+};
 
 // ============================================================
 // TOGGLE BUTTON
 // ============================================================
 export const ToggleButton = ({ label, value, onChange }) => (
-  <div style={styles.toggle(value)} onClick={() => onChange(!value)}>
-    <span style={{ fontSize: 14 }}>{value ? "✓" : "○"}</span>
+  <button
+    type="button"
+    role="switch"
+    aria-checked={value}
+    style={styles.toggle(value)}
+    onClick={() => onChange(!value)}
+  >
+    <span style={{ fontSize: 14 }}>{value ? "\u2713" : "\u25CB"}</span>
     {label}
-  </div>
+  </button>
 );
 
 // ============================================================
 // NAVIGATION BUTTONS (Zurück / Weiter)
 // ============================================================
-export const NavButtons = ({ onPrev, onNext, nextLabel = "Weiter →" }) => (
+export const NavButtons = ({ onPrev, onNext, nextLabel = "Weiter \u2192" }) => (
   <div
     style={{
       display: "flex",
@@ -110,7 +127,7 @@ export const NavButtons = ({ onPrev, onNext, nextLabel = "Weiter →" }) => (
   >
     {onPrev && (
       <button style={styles.btnOutline} onClick={onPrev}>
-        ← Zurück
+        &larr; Zurück
       </button>
     )}
     {onNext && (

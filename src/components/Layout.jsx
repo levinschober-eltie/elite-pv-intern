@@ -42,6 +42,8 @@ export default function Layout() {
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
+          aria-expanded={mobileOpen}
           style={{
             background: "none",
             border: "none",

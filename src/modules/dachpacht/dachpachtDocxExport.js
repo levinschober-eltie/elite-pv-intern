@@ -5,7 +5,7 @@ import {
   createKeyValueTable,
   createHighlightBox,
 } from "../../lib/docxExport";
-import { formatEuro, formatDatum } from "../../lib/formatters";
+import { formatEuro, formatDatum, zahlInWort } from "../../lib/formatters";
 import { Paragraph, TextRun, PageBreak } from "docx";
 
 // ============================================================
@@ -48,14 +48,6 @@ function ersetzePlatzhalter(text, daten) {
     result = result.replaceAll(key, String(val));
   }
   return result;
-}
-
-// Zahl in Wort (vereinfacht – gibt formatierte Zahl zurück)
-function zahlInWort(betrag) {
-  return Math.floor(betrag).toLocaleString("de-DE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 // ============================================================

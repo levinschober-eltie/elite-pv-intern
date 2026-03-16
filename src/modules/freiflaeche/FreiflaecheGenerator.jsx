@@ -12,6 +12,7 @@ import {
   generateFreiflaechePreisblattDocx,
   generateFreiflaecheVertragDocx,
 } from "./freiflaecheDocxExport";
+import { useToast } from "../../components/Toast";
 import { TextInput, SelectInput, NavButtons } from "../../components/FormFields";
 import Section from "../../components/Section";
 import Steps from "../../components/Steps";
@@ -90,6 +91,7 @@ function ModellKarte({ modell, aktiv, onClick, modellKey }) {
 // MAIN GENERATOR
 // ============================================================
 export default function FreiflaecheGenerator() {
+  const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
@@ -216,7 +218,7 @@ export default function FreiflaecheGenerator() {
         await generateFreiflaecheVertragDocx(exportData, ergebnis, klauseln);
       }
     } catch (error) {
-      alert("DOCX-Fehler: " + error.message);
+      showToast("DOCX-Fehler: " + error.message, "error");
     }
     setIsGenerating(false);
   };

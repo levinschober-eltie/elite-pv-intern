@@ -1,7 +1,7 @@
-import React from "react";
+import React, { memo } from "react";
 import { styles, COLORS } from "../theme";
 
-export default function ResultBox({ label, children }) {
+const ResultBox = memo(function ResultBox({ label, children }) {
   return (
     <div style={styles.resultBox}>
       <div
@@ -17,13 +17,15 @@ export default function ResultBox({ label, children }) {
       {children}
     </div>
   );
-}
+});
 
-export function ResultGrid({ children }) {
+export default ResultBox;
+
+export const ResultGrid = memo(function ResultGrid({ children }) {
   return <div style={styles.resultGrid}>{children}</div>;
-}
+});
 
-export function ResultCell({ label, amount, sub }) {
+export const ResultCell = memo(function ResultCell({ label, amount, sub }) {
   return (
     <div style={styles.resultCell}>
       <div style={{ fontSize: 10.5, color: COLORS.mid }}>{label}</div>
@@ -35,4 +37,4 @@ export function ResultCell({ label, amount, sub }) {
       )}
     </div>
   );
-}
+});

@@ -1,8 +1,8 @@
-import React from "react";
+import React, { memo } from "react";
 import { styles } from "../theme";
 import { ICON_B64 } from "../assets/logo";
 
-export default function Section({ title, icon, children }) {
+export default memo(function Section({ title, icon, children }) {
   return (
     <div style={styles.card}>
       <div style={styles.sectionHeader}>
@@ -16,4 +16,4 @@ export default function Section({ title, icon, children }) {
       {children}
     </div>
   );
-}
+})
