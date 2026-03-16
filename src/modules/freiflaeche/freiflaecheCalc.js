@@ -152,7 +152,7 @@ function berechneModellD(params) {
   const jahresertragKwh = leistungKwp * spezifischerErtrag;
   const stromerloes = jahresertragKwh * (strompreisCentKwh / 100);
   const erloesAnteil = stromerloes * (erloesProzentsatz / 100);
-  const pachtzinsJahr = Math.max(mindestpacht, mindestpacht + erloesAnteil);
+  const pachtzinsJahr = mindestpacht + erloesAnteil;
 
   const jahresWerte = [];
   let gesamtPacht = 0;

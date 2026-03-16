@@ -11,6 +11,7 @@ import {
   AUSRICHTUNGEN,
 } from "./dachpachtCalc";
 import { DACHPACHT_KLAUSELN } from "./dachpachtClauses";
+import { getKlauseln } from "../../lib/klauselStore";
 import {
   generateDachpachtPreisblattDocx,
   generateDachpachtVertragDocx,
@@ -100,7 +101,7 @@ export default function DachpachtGenerator() {
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
-    DACHPACHT_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("dachpacht", DACHPACHT_KLAUSELN)
   );
 
   const [eigentuemer, setEigentuemer] = useState(createDefaultEigentuemer());

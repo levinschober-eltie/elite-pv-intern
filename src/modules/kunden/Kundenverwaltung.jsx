@@ -179,11 +179,17 @@ export default function Kundenverwaltung() {
           showToast("Ungueltige Datei: Kein Array.", "error");
           return;
         }
+        // Validate: each item must have a name field
+        const valid = imported.filter((item) => item && item.name && typeof item.name === "string");
+        if (valid.length === 0) {
+          showToast("Keine gültigen Kunden in der Datei gefunden.", "error");
+          return;
+        }
         // Merge: skip duplicates by ID
         const existingIds = new Set(kunden.map((k) => k.id));
         let addedCount = 0;
         const merged = [...kunden];
-        for (const item of imported) {
+        for (const item of valid) {
           if (item.id && !existingIds.has(item.id)) {
             merged.push(item);
             existingIds.add(item.id);
@@ -359,8 +365,9 @@ export default function Kundenverwaltung() {
 
           {/* Notizen */}
           <div style={{ marginTop: 10 }}>
-            <label style={styles.label}>Notizen</label>
+            <label htmlFor="kunden-notizen" style={styles.label}>Notizen</label>
             <textarea
+              id="kunden-notizen"
               value={form.notizen}
               onChange={(e) => setField("notizen", e.target.value)}
               placeholder="Freitext..."

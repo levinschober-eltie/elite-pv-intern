@@ -5,7 +5,7 @@ export default function WarningBanner({ warnungen }) {
   if (!warnungen || warnungen.length === 0) return null;
 
   return (
-    <div style={styles.warnung}>
+    <div style={styles.warnung} role="alert">
       ⚠️ {warnungen.join(" | ")}
     </div>
   );

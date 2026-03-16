@@ -55,7 +55,7 @@ Nach Ma\u00DFgabe der folgenden Bestimmungen gestattet der Grundst\u00FCckseigen
 
 3.6. Dem Grundst\u00FCcksnutzer obliegen die Verkehrssicherungspflichten sowie die Gr\u00FCnpflege der BESS-Fl\u00E4che.
 
-3.7. Der Grundst\u00FCckseigent\u00FCmer verzichtet auf das Vermieterp\pfandrecht am BESS (\u00A7\u00A7 562 ff. BGB).`,
+3.7. Der Grundst\u00FCckseigent\u00FCmer verzichtet auf das Vermieterpfandrecht am BESS (\u00A7\u00A7 562 ff. BGB).`,
   },
   {
     id: "bess-4",

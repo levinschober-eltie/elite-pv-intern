@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { path: "/freiflaeche", icon: "🌾", label: "Freifläche" },
   { path: "/bess", icon: "🔋", label: "BESS" },
   { path: "/kunden", icon: "👥", label: "Kunden" },
+  { path: "/vorlagen", icon: "🔒", label: "Vorlagen" },
 ];
 
 export default function Sidebar({ onNavClick }) {

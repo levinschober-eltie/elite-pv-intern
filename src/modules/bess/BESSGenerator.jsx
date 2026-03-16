@@ -8,6 +8,7 @@ import {
   BESS_ANWENDUNGEN,
 } from "./bessCalc";
 import { BESS_KLAUSELN } from "./bessClauses";
+import { getKlauseln } from "../../lib/klauselStore";
 import {
   generateBESSPreisblattDocx,
   generateBESSVertragDocx,
@@ -95,7 +96,7 @@ export default function BESSGenerator() {
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
-    BESS_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("bess", BESS_KLAUSELN)
   );
 
   const [eigentuemer, setEigentuemer] = useState(createDefaultEigentuemer());

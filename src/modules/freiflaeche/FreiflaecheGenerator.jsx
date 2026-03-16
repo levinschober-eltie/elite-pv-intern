@@ -8,6 +8,7 @@ import {
   NETZANSCHLUSS_EBENEN,
 } from "./freiflaecheCalc";
 import { FREIFLAECHE_KLAUSELN } from "./freiflaecheClauses";
+import { getKlauseln } from "../../lib/klauselStore";
 import {
   generateFreiflaechePreisblattDocx,
   generateFreiflaecheVertragDocx,
@@ -28,7 +29,7 @@ import WarningBanner from "../../components/WarningBanner";
 // ============================================================
 const MODELL_FARBEN = { A: COLORS.yellow, B: COLORS.blue, C: COLORS.green, D: "#9C27B0" };
 
-function ModellKarte({ modell, aktiv, onClick, modellKey }) {
+const ModellKarte = React.memo(function ModellKarte({ modell, aktiv, onClick, modellKey }) {
   const farbe = MODELL_FARBEN[modellKey] || COLORS.yellow;
   const istDunkel = modellKey === "B" || modellKey === "D";
   return (
@@ -85,7 +86,7 @@ function ModellKarte({ modell, aktiv, onClick, modellKey }) {
       </div>
     </div>
   );
-}
+});
 
 // ============================================================
 // MAIN GENERATOR
@@ -95,7 +96,7 @@ export default function FreiflaecheGenerator() {
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
-    FREIFLAECHE_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("freiflaeche", FREIFLAECHE_KLAUSELN)
   );
 
   const [eigentuemer, setEigentuemer] = useState(createDefaultEigentuemer());
@@ -759,7 +760,7 @@ export default function FreiflaecheGenerator() {
               onClick={() => handleDocxExport("vertrag")}
               disabled={isGenerating || exportGesperrt}
             >
-              {isGenerating ? "⏳" : "📄"} Vertrag als DOCX
+              {isGenerating ? "Wird erstellt…" : "📄 Vertrag als DOCX"}
             </button>
           </div>
         </>

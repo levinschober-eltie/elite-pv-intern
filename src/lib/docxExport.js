@@ -17,7 +17,6 @@ import {
   PageBreak,
   TabStopType,
   TabStopPosition,
-  ImageRun,
 } from "docx";
 import { saveAs } from "file-saver";
 import { formatDatum } from "./formatters";

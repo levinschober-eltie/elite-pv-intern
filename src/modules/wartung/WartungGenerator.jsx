@@ -4,6 +4,7 @@ import { formatEuro, formatProzent } from "../../lib/formatters";
 import { clampValue, getWarnung, VALIDIERUNG } from "../../lib/validators";
 import { berechneWartung } from "./wartungCalc";
 import { DEFAULT_KLAUSELN } from "./wartungClauses";
+import { getKlauseln } from "../../lib/klauselStore";
 import { TextInput, SelectInput, ToggleButton, NavButtons } from "../../components/FormFields";
 import Section from "../../components/Section";
 import Steps from "../../components/Steps";
@@ -19,7 +20,7 @@ export default function WartungGenerator() {
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
-    DEFAULT_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("wartung", DEFAULT_KLAUSELN)
   );
 
   const [formData, setFormData] = useState({

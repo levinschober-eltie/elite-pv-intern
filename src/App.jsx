@@ -8,6 +8,7 @@ import DachpachtGenerator from "./modules/dachpacht/DachpachtGenerator";
 import FreiflaecheGenerator from "./modules/freiflaeche/FreiflaecheGenerator";
 import BESSGenerator from "./modules/bess/BESSGenerator";
 import Kundenverwaltung from "./modules/kunden/Kundenverwaltung";
+import Vorlagen from "./modules/vorlagen/Vorlagen";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/freiflaeche" element={<FreiflaecheGenerator />} />
           <Route path="/bess" element={<BESSGenerator />} />
           <Route path="/kunden" element={<Kundenverwaltung />} />
+          <Route path="/vorlagen" element={<Vorlagen />} />
         </Route>
       </Routes>
     </HashRouter>

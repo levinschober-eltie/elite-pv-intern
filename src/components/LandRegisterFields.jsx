@@ -142,14 +142,9 @@ export default function LandRegisterFields({ zeilen, onChange }) {
                   type={s.type || "text"}
                   value={zeile[s.key]}
                   onChange={(e) =>
-                    updateZeile(
-                      index,
-                      s.key,
-                      s.type === "number"
-                        ? e.target.value
-                        : e.target.value
-                    )
+                    updateZeile(index, s.key, e.target.value)
                   }
+                  aria-label={`${s.label} Zeile ${index + 1}`}
                   style={cellInputStyle}
                   step={s.type === "number" ? "any" : undefined}
                 />
@@ -206,13 +201,8 @@ export default function LandRegisterFields({ zeilen, onChange }) {
                 : s.key === "pachtflaecheHa"
                 ? `Σ ${summePacht.toFixed(2)} ha`
                 : idx === 0
-                ? "Summe"
+                ? <span style={{ color: COLORS.white, fontSize: 11, fontWeight: 700 }}>Summe</span>
                 : ""}
-              {idx === 0 && (
-                <span style={{ color: COLORS.white, fontSize: 11, fontWeight: 700 }}>
-                  Summe
-                </span>
-              )}
             </div>
           ))}
           <div style={{ width: 32 }} />

@@ -248,23 +248,4 @@ export const styles = {
     fontSize: 10.5,
     marginTop: 2,
   },
-
-  // Sidebar-Navigation
-  navItem: (active) => ({
-    display: "flex",
-    alignItems: "center",
-    gap: 9,
-    padding: "9px 16px",
-    color: active ? COLORS.yellow : "#aaa",
-    background: active ? "rgba(255,255,255,.06)" : "transparent",
-    textDecoration: "none",
-    fontSize: 13,
-    fontWeight: active ? 700 : 500,
-    borderLeft: active ? `3px solid ${COLORS.blue}` : "3px solid transparent",
-    cursor: "pointer",
-    border: "none",
-    width: "100%",
-    fontFamily: "inherit",
-    textAlign: "left",
-  }),
 };
