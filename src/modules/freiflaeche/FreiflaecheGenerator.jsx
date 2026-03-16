@@ -1038,7 +1038,7 @@ export default function FreiflaecheGenerator() {
               </div>
               {fairScore.gesamtAnpassungUnbegrenzt !== fairScore.gesamtAnpassung && (
                 <div style={{ fontSize: 10.5, color: COLORS.mid, marginTop: 4 }}>
-                  Unbegrenzte Summe: {fairScore.gesamtAnpassungUnbegrenzt}% – begrenzt auf ±30%
+                  Unbegrenzte Summe: {fairScore.gesamtAnpassungUnbegrenzt}% – begrenzt auf ±35%
                 </div>
               )}
             </div>
@@ -1376,7 +1376,7 @@ export default function FreiflaecheGenerator() {
                       <div style={{ flex: 1, height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden", position: "relative" }}>
                         <div style={{
                           position: "absolute",
-                          left: f.anpassung >= 0 ? "50%" : `${50 + (f.anpassung / 30) * 50}%`,
+                          left: f.anpassung >= 0 ? "50%" : `${50 + (f.anpassung / 35) * 50}%`,
                           width: `${Math.abs(f.anpassung) / 30 * 50}%`,
                           height: "100%",
                           background: f.anpassung >= 0 ? COLORS.green : COLORS.red,
