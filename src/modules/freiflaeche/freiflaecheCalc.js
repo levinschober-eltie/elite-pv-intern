@@ -288,6 +288,47 @@ export const PRIVILEGIERUNG_OPTIONEN = [
   "Nicht privilegiert",
 ];
 
+export const FLAECHENZUSCHNITT_OPTIONEN = [
+  "Rechteckig / regelmäßig",
+  "Leicht unregelmäßig",
+  "Stark unregelmäßig (Zwickel/Keil)",
+  "Mehrere Teilflächen",
+];
+
+export const NETZKAPAZITAET_OPTIONEN = [
+  "Freie Kapazität vorhanden",
+  "Kapazität wahrscheinlich ausreichend",
+  "Netzprüfung ausstehend",
+  "Netzausbau erforderlich",
+];
+
+export const GEMEINDE_OPTIONEN = [
+  "Sehr unterstützend (aktive Förderung)",
+  "Unterstützend (positiver Beschluss)",
+  "Neutral / noch offen",
+  "Eher ablehnend",
+  "Stark ablehnend",
+];
+
+export const EIGENTUEMER_SITUATION_OPTIONEN = [
+  "Einzelperson",
+  "Ehepaar",
+  "Erbengemeinschaft (2–3 Parteien)",
+  "Erbengemeinschaft (4+ Parteien)",
+  "Mehrere Flurstücke / versch. Eigentümer",
+];
+
+export const SCHUTZGEBIET_OPTIONEN = [
+  "Keine Einschränkungen",
+  "Landschaftsschutzgebiet",
+  "Wasserschutzgebiet Zone III",
+  "Wasserschutzgebiet Zone II",
+  "Überschwemmungsgebiet",
+  "Denkmalschutz / Sichtachsen",
+  "Naturschutzgebiet (Randlage)",
+  "Altlasten / Kontamination",
+];
+
 /**
  * Berechnet den Fair-Score für den Pachtpreis.
  * Jeder Faktor liefert einen Prozent-Aufschlag/-Abschlag.
@@ -490,13 +531,138 @@ export function berechneFairScore(bewertung) {
       : "Kleine Fläche – gleicher Planungsaufwand bei weniger Ertrag",
   });
 
+  // 13. Bodenrichtwert (€/m²)
+  const bodenrichtwert = parseFloat(bewertung.bodenrichtwert) || 0;
+  let bodenAnpassung = 0;
+  if (bodenrichtwert > 0) {
+    // Referenz: 5 €/m² = normaler Acker. Höherer Wert = Eigentümer erwartet mehr
+    if (bodenrichtwert <= 2) bodenAnpassung = -3;
+    else if (bodenrichtwert <= 5) bodenAnpassung = 0;
+    else if (bodenrichtwert <= 10) bodenAnpassung = 3;
+    else if (bodenrichtwert <= 20) bodenAnpassung = 5;
+    else bodenAnpassung = 7;
+  }
+  faktoren.push({
+    name: "Bodenrichtwert",
+    wert: bodenrichtwert > 0 ? `${bodenrichtwert.toFixed(2)} €/m²` : "Nicht angegeben",
+    anpassung: bodenAnpassung,
+    erklaerung: bodenrichtwert > 10 ? "Hoher Bodenwert – Eigentümer erwartet hohe Pacht"
+      : bodenrichtwert > 5 ? "Durchschnittlicher Bodenwert"
+      : bodenrichtwert > 0 ? "Niedriger Bodenwert – moderate Pachterwartung"
+      : "Kein Bodenrichtwert angegeben",
+  });
+
+  // 14. Flächenzuschnitt
+  const zuschnitt = bewertung.flaechenzuschnitt || "Rechteckig / regelmäßig";
+  let zuschnittAnpassung = 0;
+  if (zuschnitt === "Rechteckig / regelmäßig") zuschnittAnpassung = 3;
+  else if (zuschnitt === "Leicht unregelmäßig") zuschnittAnpassung = 0;
+  else if (zuschnitt.startsWith("Stark")) zuschnittAnpassung = -5;
+  else zuschnittAnpassung = -7; // Mehrere Teilflächen
+  faktoren.push({
+    name: "Flächenzuschnitt",
+    wert: zuschnitt,
+    anpassung: zuschnittAnpassung,
+    erklaerung: zuschnittAnpassung >= 3 ? "Optimale Modulbelegung, wenig Zaun"
+      : zuschnittAnpassung >= 0 ? "Akzeptabler Zuschnitt"
+      : "Mehr Zaun, Randverluste, schwierigere Belegung",
+  });
+
+  // 15. Netzkapazität / Einspeisezusage
+  const netzkapazitaet = bewertung.netzkapazitaet || "Netzprüfung ausstehend";
+  let netzAnpassung = 0;
+  if (netzkapazitaet === "Freie Kapazität vorhanden") netzAnpassung = 5;
+  else if (netzkapazitaet.startsWith("Kapazität wahrscheinlich")) netzAnpassung = 2;
+  else if (netzkapazitaet === "Netzprüfung ausstehend") netzAnpassung = -2;
+  else netzAnpassung = -8; // Netzausbau
+  faktoren.push({
+    name: "Netzkapazität",
+    wert: netzkapazitaet,
+    anpassung: netzAnpassung,
+    erklaerung: netzAnpassung >= 5 ? "Einspeisezusage erteilt – kein Netzrisiko"
+      : netzAnpassung >= 0 ? "Kapazität voraussichtlich vorhanden"
+      : netzAnpassung >= -2 ? "Netzprüfung noch ausstehend – Restrisiko"
+      : "Netzausbau nötig – hohe Kosten und Verzögerung",
+  });
+
+  // 16. Gemeinde-Einstellung
+  const gemeinde = bewertung.gemeindeEinstellung || "Neutral / noch offen";
+  let gemeindeAnpassung = 0;
+  if (gemeinde.startsWith("Sehr unterstützend")) gemeindeAnpassung = 5;
+  else if (gemeinde.startsWith("Unterstützend")) gemeindeAnpassung = 3;
+  else if (gemeinde.startsWith("Neutral")) gemeindeAnpassung = 0;
+  else if (gemeinde.startsWith("Eher")) gemeindeAnpassung = -6;
+  else gemeindeAnpassung = -12; // Stark ablehnend
+  faktoren.push({
+    name: "Gemeinde-Einstellung",
+    wert: gemeinde,
+    anpassung: gemeindeAnpassung,
+    erklaerung: gemeindeAnpassung >= 3 ? "Gemeinde fördert PV-Projekte aktiv"
+      : gemeindeAnpassung >= 0 ? "Gemeinde neutral – B-Plan-Verfahren offen"
+      : "Gemeindewiderstand – Projekt gefährdet oder stark verzögert",
+  });
+
+  // 17. Eigentümer-Situation
+  const eigSituation = bewertung.eigentuemerSituation || "Einzelperson";
+  let eigAnpassung = 0;
+  if (eigSituation === "Einzelperson") eigAnpassung = 3;
+  else if (eigSituation === "Ehepaar") eigAnpassung = 2;
+  else if (eigSituation.includes("2–3")) eigAnpassung = -2;
+  else if (eigSituation.includes("4+")) eigAnpassung = -6;
+  else eigAnpassung = -8; // Mehrere Flurstücke / versch. Eigentümer
+  faktoren.push({
+    name: "Eigentümer-Situation",
+    wert: eigSituation,
+    anpassung: eigAnpassung,
+    erklaerung: eigAnpassung >= 2 ? "Einfache Verhandlung mit einer Partei"
+      : eigAnpassung >= 0 ? "Überschaubare Eigentümerstruktur"
+      : "Komplexe Verhandlungen mit mehreren Parteien – Risiko und Aufwand",
+  });
+
+  // 18. Schutzgebiete / Altlasten
+  const schutzgebiete = bewertung.schutzgebiete || [];
+  let schutzAnpassung = 0;
+  if (schutzgebiete.length === 0 || (schutzgebiete.length === 1 && schutzgebiete[0] === "Keine Einschränkungen")) {
+    schutzAnpassung = 2;
+  } else {
+    schutzgebiete.forEach((sg) => {
+      if (sg === "Landschaftsschutzgebiet") schutzAnpassung -= 3;
+      else if (sg === "Wasserschutzgebiet Zone III") schutzAnpassung -= 3;
+      else if (sg === "Wasserschutzgebiet Zone II") schutzAnpassung -= 6;
+      else if (sg === "Überschwemmungsgebiet") schutzAnpassung -= 5;
+      else if (sg.startsWith("Denkmalschutz")) schutzAnpassung -= 4;
+      else if (sg.startsWith("Naturschutzgebiet")) schutzAnpassung -= 7;
+      else if (sg.startsWith("Altlasten")) schutzAnpassung -= 5;
+    });
+    schutzAnpassung = Math.max(-15, schutzAnpassung);
+  }
+  faktoren.push({
+    name: "Schutzgebiete / Restriktionen",
+    wert: schutzgebiete.length === 0 || (schutzgebiete.length === 1 && schutzgebiete[0] === "Keine Einschränkungen")
+      ? "Keine Einschränkungen"
+      : schutzgebiete.filter((s) => s !== "Keine Einschränkungen").join(", "),
+    anpassung: schutzAnpassung,
+    erklaerung: schutzAnpassung >= 0 ? "Keine relevanten Schutzgebiete oder Restriktionen"
+      : "Zusätzliche Auflagen, Gutachten oder Einschränkungen zu erwarten",
+  });
+
   // Summe berechnen
   const gesamtAnpassung = faktoren.reduce((sum, f) => sum + f.anpassung, 0);
-  const gesamtAnpassungBegrenzt = Math.max(-30, Math.min(30, gesamtAnpassung));
+  const gesamtAnpassungBegrenzt = Math.max(-35, Math.min(35, gesamtAnpassung));
   const multiplikator = 1 + gesamtAnpassungBegrenzt / 100;
 
   // Score von 0-100 (50 = neutral)
-  const score = Math.max(0, Math.min(100, 50 + gesamtAnpassungBegrenzt * 1.67));
+  const score = Math.max(0, Math.min(100, 50 + gesamtAnpassungBegrenzt * 1.43));
+
+  // Sensitivitätsanalyse: sortiert nach absolutem Einfluss
+  const sensitivitaet = [...faktoren]
+    .sort((a, b) => Math.abs(b.anpassung) - Math.abs(a.anpassung))
+    .slice(0, 5);
+
+  // Marktvergleich (typischer Bereich 2.500–4.500 €/ha/Jahr)
+  const MARKT_MIN = 2500;
+  const MARKT_MAX = 4500;
+  const MARKT_MITTE = (MARKT_MIN + MARKT_MAX) / 2;
 
   return {
     faktoren,
@@ -504,6 +670,8 @@ export function berechneFairScore(bewertung) {
     gesamtAnpassungUnbegrenzt: gesamtAnpassung,
     multiplikator,
     score: Math.round(score),
+    sensitivitaet,
+    markt: { min: MARKT_MIN, max: MARKT_MAX, mitte: MARKT_MITTE },
   };
 }
 

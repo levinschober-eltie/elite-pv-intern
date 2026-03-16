@@ -13,6 +13,11 @@ import {
   VERMARKTUNGSARTEN,
   AUSGLEICH_TYPEN,
   PRIVILEGIERUNG_OPTIONEN,
+  FLAECHENZUSCHNITT_OPTIONEN,
+  NETZKAPAZITAET_OPTIONEN,
+  GEMEINDE_OPTIONEN,
+  EIGENTUEMER_SITUATION_OPTIONEN,
+  SCHUTZGEBIET_OPTIONEN,
 } from "./freiflaecheCalc";
 import { FREIFLAECHE_KLAUSELN } from "./freiflaecheClauses";
 import { getKlauseln } from "../../lib/klauselStore";
@@ -171,6 +176,12 @@ export default function FreiflaecheGenerator() {
     nvpEntfernungKm: 2,
     privilegierung: "Nicht privilegiert",
     pachtflaecheHa: 0,
+    bodenrichtwert: "",
+    flaechenzuschnitt: "Rechteckig / regelmäßig",
+    netzkapazitaet: "Netzprüfung ausstehend",
+    gemeindeEinstellung: "Neutral / noch offen",
+    eigentuemerSituation: "Einzelperson",
+    schutzgebiete: ["Keine Einschränkungen"],
   });
 
   const updateBewertung = (key) => (value) => {
@@ -452,10 +463,43 @@ export default function FreiflaecheGenerator() {
       {activeTab === 3 && (
         <>
           <Section title="Standort-Bewertung – Fairer Pachtpreis" icon="⚖️">
-            <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 10, lineHeight: 1.5 }}>
               Alle Parameter fließen in einen Standort-Score ein, der den Basispachtpreis nach oben oder unten anpasst.
-              Der Score berücksichtigt Baukosten, Ertragsminderungen und Projektaufwand.
             </p>
+
+            {/* Preset-Profile */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ ...styles.label, marginBottom: 6 }}>Schnellauswahl – Preset-Profil</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {[
+                  {
+                    name: "Optimaler Acker",
+                    preset: { grz: 0.7, lagerplatz: true, pachtstatus: "Kein Pachtvertrag", bewuchs: "Kein Bewuchs", ausgleichstyp: "Keine Ausgleichsflächen", ausgleichsflaecheHa: 0, ausgleichskostenProHa: 0, zuwegungFeldweg: 50, zuwegungFreiflaeche: 0, bauleiterScore: 9, neigungGrad: 5, neigungRichtung: "Süd", privilegierung: "Privilegiert (§35 BauGB)", bodenrichtwert: 5, flaechenzuschnitt: "Rechteckig / regelmäßig", netzkapazitaet: "Freie Kapazität vorhanden", gemeindeEinstellung: "Sehr unterstützend (aktive Förderung)", eigentuemerSituation: "Einzelperson", schutzgebiete: ["Keine Einschränkungen"] },
+                  },
+                  {
+                    name: "Standard Acker Bayern",
+                    preset: { grz: 0.6, lagerplatz: false, pachtstatus: "Kein Pachtvertrag", bewuchs: "Wenig (vereinzelt Büsche)", ausgleichstyp: "Extensivierung", ausgleichsflaecheHa: 1, ausgleichskostenProHa: 5000, zuwegungFeldweg: 200, zuwegungFreiflaeche: 50, bauleiterScore: 7, neigungGrad: 0, neigungRichtung: "Flach (< 3°)", privilegierung: "B-Plan in Aufstellung", bodenrichtwert: 8, flaechenzuschnitt: "Leicht unregelmäßig", netzkapazitaet: "Kapazität wahrscheinlich ausreichend", gemeindeEinstellung: "Unterstützend (positiver Beschluss)", eigentuemerSituation: "Einzelperson", schutzgebiete: ["Keine Einschränkungen"] },
+                  },
+                  {
+                    name: "Konversionsfläche Ost",
+                    preset: { grz: 0.5, lagerplatz: true, pachtstatus: "Kein Pachtvertrag", bewuchs: "Mittel (Hecken/Baumreihen)", ausgleichstyp: "Aufforstung", ausgleichsflaecheHa: 2, ausgleichskostenProHa: 8000, zuwegungFeldweg: 100, zuwegungFreiflaeche: 100, bauleiterScore: 6, neigungGrad: 0, neigungRichtung: "Flach (< 3°)", privilegierung: "Privilegiert (§35 BauGB)", bodenrichtwert: 2, flaechenzuschnitt: "Leicht unregelmäßig", netzkapazitaet: "Netzprüfung ausstehend", gemeindeEinstellung: "Neutral / noch offen", eigentuemerSituation: "Ehepaar", schutzgebiete: ["Altlasten / Kontamination"] },
+                  },
+                  {
+                    name: "Schwierige Lage",
+                    preset: { grz: 0.4, lagerplatz: false, pachtstatus: "Bestehender Pachtvertrag", bewuchs: "Viel (starker Baumbestand)", ausgleichstyp: "Artenschutz", ausgleichsflaecheHa: 3, ausgleichskostenProHa: 15000, zuwegungFeldweg: 400, zuwegungFreiflaeche: 200, bauleiterScore: 3, neigungGrad: 8, neigungRichtung: "Nord", privilegierung: "Nicht privilegiert", bodenrichtwert: 3, flaechenzuschnitt: "Stark unregelmäßig (Zwickel/Keil)", netzkapazitaet: "Netzausbau erforderlich", gemeindeEinstellung: "Eher ablehnend", eigentuemerSituation: "Erbengemeinschaft (4+ Parteien)", schutzgebiete: ["Landschaftsschutzgebiet", "Wasserschutzgebiet Zone III"] },
+                  },
+                ].map((profil) => (
+                  <button
+                    key={profil.name}
+                    type="button"
+                    style={{ ...styles.btnOutline, fontSize: 11, padding: "5px 12px" }}
+                    onClick={() => setBewertung((prev) => ({ ...prev, ...profil.preset, pachtflaecheHa: prev.pachtflaecheHa, vermarktungsTranchen: prev.vermarktungsTranchen, nvpEntfernungKm: prev.nvpEntfernungKm }))}
+                  >
+                    {profil.name}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Score-Anzeige */}
             <div style={{
@@ -848,6 +892,107 @@ export default function FreiflaecheGenerator() {
             </div>
           </Section>
 
+          {/* Bodenrichtwert + Flächenzuschnitt */}
+          <Section title="Bodenwert & Zuschnitt" icon="🗺️">
+            <div style={styles.grid2}>
+              <TextInput
+                label="Bodenrichtwert (Gutachterausschuss)"
+                value={bewertung.bodenrichtwert}
+                onChange={updateBewertung("bodenrichtwert")}
+                type="number"
+                suffix="€/m²"
+                min={0}
+                placeholder="z.B. 5.00"
+              />
+              <SelectInput
+                label="Flächenzuschnitt"
+                value={bewertung.flaechenzuschnitt}
+                onChange={updateBewertung("flaechenzuschnitt")}
+                options={FLAECHENZUSCHNITT_OPTIONEN}
+              />
+            </div>
+          </Section>
+
+          {/* Netzkapazität */}
+          <Section title="Netzkapazität & Einspeisezusage" icon="🔌">
+            <SelectInput
+              label="Status Netzkapazität"
+              value={bewertung.netzkapazitaet}
+              onChange={updateBewertung("netzkapazitaet")}
+              options={NETZKAPAZITAET_OPTIONEN}
+            />
+            {bewertung.netzkapazitaet === "Netzausbau erforderlich" && (
+              <div style={{ ...styles.warnung, marginTop: 8 }}>
+                Netzausbau kann 50.000–500.000 € kosten und das Projekt um 1–3 Jahre verzögern.
+              </div>
+            )}
+          </Section>
+
+          {/* Gemeinde */}
+          <Section title="Gemeinde-Einstellung" icon="🏛️">
+            <SelectInput
+              label="Haltung der Gemeinde zum PV-Projekt"
+              value={bewertung.gemeindeEinstellung}
+              onChange={updateBewertung("gemeindeEinstellung")}
+              options={GEMEINDE_OPTIONEN}
+            />
+            {bewertung.gemeindeEinstellung.startsWith("Stark") && (
+              <div style={{ ...styles.warnung, marginTop: 8 }}>
+                Bei starker Ablehnung ist das B-Plan-Verfahren praktisch aussichtslos. Projekt nur bei §35-Privilegierung realistisch.
+              </div>
+            )}
+          </Section>
+
+          {/* Eigentümer-Situation */}
+          <Section title="Eigentümer-Situation" icon="👥">
+            <SelectInput
+              label="Eigentümerstruktur"
+              value={bewertung.eigentuemerSituation}
+              onChange={updateBewertung("eigentuemerSituation")}
+              options={EIGENTUEMER_SITUATION_OPTIONEN}
+            />
+          </Section>
+
+          {/* Schutzgebiete / Altlasten */}
+          <Section title="Schutzgebiete & Restriktionen" icon="🛡️">
+            <p style={{ fontSize: 11, color: COLORS.mid, marginBottom: 8 }}>
+              Mehrfachauswahl möglich – alle zutreffenden anklicken:
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {SCHUTZGEBIET_OPTIONEN.map((sg) => {
+                const aktiv = bewertung.schutzgebiete.includes(sg);
+                const istKeine = sg === "Keine Einschränkungen";
+                return (
+                  <button
+                    key={sg}
+                    type="button"
+                    style={{
+                      ...styles.toggle(aktiv),
+                      fontSize: 11.5,
+                      padding: "5px 10px",
+                      borderColor: aktiv && !istKeine ? COLORS.red : aktiv ? COLORS.green : "#ddd",
+                      color: aktiv && !istKeine ? COLORS.red : aktiv ? COLORS.green : COLORS.mid,
+                      background: aktiv && !istKeine ? "#FFEBEE" : aktiv ? "#E8F5E9" : COLORS.white,
+                    }}
+                    onClick={() => {
+                      let neu;
+                      if (istKeine) {
+                        neu = aktiv ? [] : ["Keine Einschränkungen"];
+                      } else {
+                        const ohne = bewertung.schutzgebiete.filter((s) => s !== "Keine Einschränkungen");
+                        neu = aktiv ? ohne.filter((s) => s !== sg) : [...ohne, sg];
+                        if (neu.length === 0) neu = ["Keine Einschränkungen"];
+                      }
+                      updateBewertung("schutzgebiete")(neu);
+                    }}
+                  >
+                    {aktiv ? (istKeine ? "✓ " : "⚠ ") : ""}{sg}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+
           {/* Faktor-Übersicht */}
           <Section title="Faktor-Übersicht" icon="📊">
             <div style={{ fontSize: 12 }}>
@@ -1159,6 +1304,98 @@ export default function FreiflaecheGenerator() {
                 Empfohlener Pachtpreis basierend auf {fairScore.faktoren.length} Standortfaktoren.
                 Gesamtlaufzeit fair: {formatEuro(gewaehltes.fairPachtGesamt)}
               </div>
+
+              {/* Marktvergleichs-Balken */}
+              {pachtflaecheHa > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 4 }}>
+                    Marktvergleich (typisch {formatEuro(fairScore.markt.min)}–{formatEuro(fairScore.markt.max)}/ha/Jahr)
+                  </div>
+                  {(() => {
+                    const fairProHa = gewaehltes.fairPachtzinsJahr / pachtflaecheHa;
+                    const basisProHa = gewaehltes.pachtzinsJahr / pachtflaecheHa;
+                    const { min, max } = fairScore.markt;
+                    const range = max - min;
+                    const pos = Math.max(0, Math.min(100, ((fairProHa - min) / range) * 100));
+                    const basisPos = Math.max(0, Math.min(100, ((basisProHa - min) / range) * 100));
+                    return (
+                      <div>
+                        <div style={{ position: "relative", height: 28, background: "#f0f0f0", borderRadius: 6, overflow: "hidden" }}>
+                          {/* Farbbereich */}
+                          <div style={{ position: "absolute", inset: 0, display: "flex" }}>
+                            <div style={{ flex: 1, background: "#FFCDD2" }} />
+                            <div style={{ flex: 1, background: "#FFF9C4" }} />
+                            <div style={{ flex: 1, background: "#C8E6C9" }} />
+                          </div>
+                          {/* Basis-Marker */}
+                          <div style={{
+                            position: "absolute",
+                            left: `${basisPos}%`,
+                            top: 0,
+                            bottom: 0,
+                            width: 2,
+                            background: COLORS.mid,
+                            opacity: 0.5,
+                          }} />
+                          {/* Fair-Marker */}
+                          <div style={{
+                            position: "absolute",
+                            left: `calc(${pos}% - 6px)`,
+                            top: 2,
+                            width: 12,
+                            height: 24,
+                            borderRadius: 4,
+                            background: COLORS.dark,
+                            border: "2px solid " + COLORS.yellow,
+                          }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: COLORS.mid, marginTop: 2 }}>
+                          <span>{formatEuro(min)}/ha</span>
+                          <span style={{ fontWeight: 700, color: COLORS.dark, fontSize: 11 }}>
+                            Fair: {formatEuro(fairProHa)}/ha
+                          </span>
+                          <span>{formatEuro(max)}/ha</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Sensitivitätsanalyse: Top-5 Hebel */}
+              {fairScore.sensitivitaet && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10, color: COLORS.mid, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>
+                    Top-5 Einflussfaktoren
+                  </div>
+                  {fairScore.sensitivitaet.map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                      <span style={{ fontSize: 11, color: COLORS.mid, minWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {f.name}
+                      </span>
+                      <div style={{ flex: 1, height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden", position: "relative" }}>
+                        <div style={{
+                          position: "absolute",
+                          left: f.anpassung >= 0 ? "50%" : `${50 + (f.anpassung / 30) * 50}%`,
+                          width: `${Math.abs(f.anpassung) / 30 * 50}%`,
+                          height: "100%",
+                          background: f.anpassung >= 0 ? COLORS.green : COLORS.red,
+                          borderRadius: 4,
+                        }} />
+                      </div>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        minWidth: 36,
+                        textAlign: "right",
+                        color: f.anpassung >= 0 ? COLORS.green : COLORS.red,
+                      }}>
+                        {f.anpassung >= 0 ? "+" : ""}{f.anpassung}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

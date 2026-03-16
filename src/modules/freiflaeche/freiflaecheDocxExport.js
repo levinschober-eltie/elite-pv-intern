@@ -210,6 +210,35 @@ export async function generateFreiflaechePreisblattDocx(formData, ergebnis) {
     ],
   });
 
+  // Fair-Score Bewertung (wenn vorhanden)
+  if (ergebnis.fairScore) {
+    const fs = ergebnis.fairScore;
+    sections.push({ type: "spacing", size: 150 });
+    sections.push({ type: "heading", text: `Standort-Bewertung (Fair-Score: ${fs.score}/100)` });
+
+    // Faktor-Tabelle
+    sections.push({
+      type: "table",
+      headers: ["Faktor", "Wert", "Anpassung"],
+      rows: fs.faktoren.map((f) => [
+        f.name,
+        f.wert,
+        `${f.anpassung >= 0 ? "+" : ""}${f.anpassung}%`,
+      ]),
+    });
+
+    // Fair-Preis Zusammenfassung
+    if (gewaehltes.fairPachtzinsJahr) {
+      sections.push({ type: "spacing", size: 100 });
+      sections.push({
+        type: "highlight",
+        label: `FAIRER PACHTPREIS (Anpassung: ${fs.gesamtAnpassung >= 0 ? "+" : ""}${fs.gesamtAnpassung}%)`,
+        mainText: `${formatEuro(gewaehltes.fairPachtzinsJahr)} / Jahr`,
+        subText: `Basis: ${formatEuro(gewaehltes.pachtzinsJahr)} × Faktor ${fs.multiplikator.toFixed(2)} | Gesamtlaufzeit: ${formatEuro(gewaehltes.fairPachtGesamt)}`,
+      });
+    }
+  }
+
   // Staffeltabelle (nur Modell A)
   if (formData.gewaehlteModell === "A") {
     sections.push({ type: "spacing", size: 150 });
