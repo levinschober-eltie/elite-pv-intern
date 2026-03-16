@@ -36,11 +36,27 @@ const MODULE = [
     path: "/bess",
   },
   {
+    key: "leitungsweg",
+    icon: "🔌",
+    label: "Leitungsweg",
+    status: "Aktiv",
+    color: "#7B1FA2",
+    path: "/leitungsweg",
+  },
+  {
+    key: "bauleitplanung",
+    icon: "🏗️",
+    label: "Bauleitplanung",
+    status: "Aktiv",
+    color: "#E65100",
+    path: "/bauleitplanung",
+  },
+  {
     key: "kunden",
     icon: "👥",
     label: "Kunden",
     status: "Aktiv",
-    color: "#7B1FA2",
+    color: "#546E7A",
     path: "/kunden",
   },
 ];

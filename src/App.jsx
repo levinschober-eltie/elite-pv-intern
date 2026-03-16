@@ -9,6 +9,8 @@ import FreiflaecheGenerator from "./modules/freiflaeche/FreiflaecheGenerator";
 import BESSGenerator from "./modules/bess/BESSGenerator";
 import Kundenverwaltung from "./modules/kunden/Kundenverwaltung";
 import Vorlagen from "./modules/vorlagen/Vorlagen";
+import LeitungswegGenerator from "./modules/leitungsweg/LeitungswegGenerator";
+import BauleitplanungGenerator from "./modules/bauleitplanung/BauleitplanungGenerator";
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/freiflaeche" element={<FreiflaecheGenerator />} />
           <Route path="/bess" element={<BESSGenerator />} />
           <Route path="/kunden" element={<Kundenverwaltung />} />
+          <Route path="/leitungsweg" element={<LeitungswegGenerator />} />
+          <Route path="/bauleitplanung" element={<BauleitplanungGenerator />} />
           <Route path="/vorlagen" element={<Vorlagen />} />
         </Route>
       </Routes>
