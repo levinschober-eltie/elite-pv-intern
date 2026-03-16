@@ -6,27 +6,8 @@ import Dashboard from "./modules/dashboard/Dashboard";
 import WartungGenerator from "./modules/wartung/WartungGenerator";
 import DachpachtGenerator from "./modules/dachpacht/DachpachtGenerator";
 import FreiflaecheGenerator from "./modules/freiflaeche/FreiflaecheGenerator";
-import PlaceholderPage from "./components/PlaceholderPage";
-
-function BESSPlaceholder() {
-  return (
-    <PlaceholderPage
-      title="BESS-Generator"
-      icon="🔋"
-      description="6-Tab-Workflow mit 4 Modellen, Hybrid PV+BESS"
-    />
-  );
-}
-
-function KundenPlaceholder() {
-  return (
-    <PlaceholderPage
-      title="Kundenverwaltung"
-      icon="👥"
-      description="CRUD, Suche, JSON Export/Import"
-    />
-  );
-}
+import BESSGenerator from "./modules/bess/BESSGenerator";
+import Kundenverwaltung from "./modules/kunden/Kundenverwaltung";
 
 export default function App() {
   return (
@@ -38,8 +19,8 @@ export default function App() {
           <Route path="/wartung" element={<WartungGenerator />} />
           <Route path="/dachpacht" element={<DachpachtGenerator />} />
           <Route path="/freiflaeche" element={<FreiflaecheGenerator />} />
-          <Route path="/bess" element={<BESSPlaceholder />} />
-          <Route path="/kunden" element={<KundenPlaceholder />} />
+          <Route path="/bess" element={<BESSGenerator />} />
+          <Route path="/kunden" element={<Kundenverwaltung />} />
         </Route>
       </Routes>
     </HashRouter>

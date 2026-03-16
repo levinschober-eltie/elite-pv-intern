@@ -31,9 +31,17 @@ const MODULE = [
     key: "bess",
     icon: "🔋",
     label: "BESS",
-    status: "In Entwicklung",
+    status: "Aktiv",
     color: "#E65100",
     path: "/bess",
+  },
+  {
+    key: "kunden",
+    icon: "👥",
+    label: "Kunden",
+    status: "Aktiv",
+    color: "#6A1B9A",
+    path: "/kunden",
   },
 ];
 
@@ -146,15 +154,6 @@ export default function Dashboard() {
               {mod.icon} {mod.label}
             </button>
           ))}
-          <button
-            onClick={() => navigate("/kunden")}
-            style={{
-              ...styles.btnOutline,
-              fontSize: 12,
-            }}
-          >
-            👥 Kunden
-          </button>
         </div>
       </div>
     </div>
