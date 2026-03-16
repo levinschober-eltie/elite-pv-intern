@@ -159,13 +159,15 @@ export default function FreiflaecheGenerator() {
     bewuchs: "Wenig (vereinzelt Büsche)",
     ausgleichsflaecheHa: 0,
     ausgleichstyp: "Keine Ausgleichsflächen",
+    ausgleichskostenProHa: 0,
     zuwegungFeldweg: 0,
     zuwegungFreiflaeche: 0,
     bauleiterScore: 7,
     neigungGrad: 0,
     neigungRichtung: "Flach (< 3°)",
-    vermarktungsart: "EEG-Ausschreibung",
-    einspeiseverguetung: 5.5,
+    vermarktungsTranchen: [
+      { art: "EEG-Ausschreibung", anteilProzent: 100, preisCentKwh: 5.5, abnahmeMwh: "" },
+    ],
     nvpEntfernungKm: 2,
     privilegierung: "Nicht privilegiert",
     pachtflaecheHa: 0,
@@ -611,24 +613,50 @@ export default function FreiflaecheGenerator() {
 
           {/* Ausgleichsflächen */}
           <Section title="Ausgleichsflächen" icon="🌿">
-            <div style={styles.grid2}>
-              <SelectInput
-                label="Art der Ausgleichsmaßnahme"
-                value={bewertung.ausgleichstyp}
-                onChange={updateBewertung("ausgleichstyp")}
-                options={AUSGLEICH_TYPEN}
-              />
-              {bewertung.ausgleichstyp !== "Keine Ausgleichsflächen" && (
-                <TextInput
-                  label="Ausgleichsfläche"
-                  value={bewertung.ausgleichsflaecheHa}
-                  onChange={updateBewertung("ausgleichsflaecheHa")}
-                  type="number"
-                  suffix="ha"
-                  min={0}
-                />
-              )}
-            </div>
+            <SelectInput
+              label="Art der Ausgleichsmaßnahme"
+              value={bewertung.ausgleichstyp}
+              onChange={updateBewertung("ausgleichstyp")}
+              options={AUSGLEICH_TYPEN}
+            />
+            {bewertung.ausgleichstyp !== "Keine Ausgleichsflächen" && (
+              <>
+                <div style={{ ...styles.grid2, marginTop: 10 }}>
+                  <TextInput
+                    label="Ausgleichsfläche"
+                    value={bewertung.ausgleichsflaecheHa}
+                    onChange={updateBewertung("ausgleichsflaecheHa")}
+                    type="number"
+                    suffix="ha"
+                    min={0}
+                    placeholder="z.B. 2.5"
+                  />
+                  <TextInput
+                    label="Kosten pro Hektar"
+                    value={bewertung.ausgleichskostenProHa}
+                    onChange={updateBewertung("ausgleichskostenProHa")}
+                    type="number"
+                    suffix="€/ha"
+                    min={0}
+                    placeholder="z.B. 8000"
+                  />
+                </div>
+                {bewertung.ausgleichsflaecheHa > 0 && bewertung.ausgleichskostenProHa > 0 && (
+                  <div style={{
+                    marginTop: 8,
+                    padding: "8px 12px",
+                    background: COLORS.lightBlue,
+                    borderRadius: 6,
+                    fontSize: 12,
+                    border: "1px solid #dde8f0",
+                  }}>
+                    <span style={{ fontWeight: 700 }}>Gesamtkosten Ausgleich: </span>
+                    {formatEuro(bewertung.ausgleichsflaecheHa * bewertung.ausgleichskostenProHa)}
+                    <span style={{ color: COLORS.mid }}> ({bewertung.ausgleichsflaecheHa} ha × {Number(bewertung.ausgleichskostenProHa).toLocaleString("de-DE")} €/ha)</span>
+                  </div>
+                )}
+              </>
+            )}
           </Section>
 
           {/* Zuwegung */}
@@ -660,24 +688,124 @@ export default function FreiflaecheGenerator() {
 
           {/* Vermarktung */}
           <Section title="Vermarktung & Netzanschluss" icon="💰">
-            <div style={styles.grid2}>
-              <SelectInput
-                label="Vermarktungsart"
-                value={bewertung.vermarktungsart}
-                onChange={updateBewertung("vermarktungsart")}
-                options={VERMARKTUNGSARTEN}
-              />
-              <TextInput
-                label="Erwartete Einspeisevergütung"
-                value={bewertung.einspeiseverguetung}
-                onChange={updateBewertung("einspeiseverguetung")}
-                type="number"
-                suffix="ct/kWh"
-                min={3}
-                max={15}
-              />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <label style={{ ...styles.label, margin: 0 }}>Vermarktungstranchen</label>
+              <button
+                type="button"
+                style={{ ...styles.btnOutline, fontSize: 11, padding: "4px 10px" }}
+                onClick={() => {
+                  const neu = [...bewertung.vermarktungsTranchen, { art: "PPA-Vertrag", anteilProzent: 0, preisCentKwh: 7, abnahmeMwh: "" }];
+                  updateBewertung("vermarktungsTranchen")(neu);
+                }}
+              >
+                + Tranche
+              </button>
             </div>
-            <div style={{ marginTop: 10 }}>
+
+            {bewertung.vermarktungsTranchen.map((tranche, idx) => (
+              <div key={idx} style={{
+                background: COLORS.light,
+                borderRadius: 8,
+                padding: "10px 12px",
+                marginBottom: 8,
+                border: "1px solid #e4e4e4",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 12 }}>Tranche {idx + 1}</span>
+                  {bewertung.vermarktungsTranchen.length > 1 && (
+                    <button
+                      type="button"
+                      style={{ background: "none", border: "none", color: COLORS.red, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+                      onClick={() => {
+                        const neu = bewertung.vermarktungsTranchen.filter((_, i) => i !== idx);
+                        updateBewertung("vermarktungsTranchen")(neu);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: tranche.art === "PPA-Vertrag" ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={styles.label}>Art</label>
+                    <select
+                      value={tranche.art}
+                      onChange={(e) => {
+                        const neu = [...bewertung.vermarktungsTranchen];
+                        neu[idx] = { ...neu[idx], art: e.target.value };
+                        updateBewertung("vermarktungsTranchen")(neu);
+                      }}
+                      style={styles.select}
+                    >
+                      {VERMARKTUNGSARTEN.map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <TextInput
+                    label="Anteil"
+                    value={tranche.anteilProzent}
+                    onChange={(v) => {
+                      const neu = [...bewertung.vermarktungsTranchen];
+                      neu[idx] = { ...neu[idx], anteilProzent: v };
+                      updateBewertung("vermarktungsTranchen")(neu);
+                    }}
+                    type="number"
+                    suffix="%"
+                    min={0}
+                    max={100}
+                  />
+                  <TextInput
+                    label="Preis"
+                    value={tranche.preisCentKwh}
+                    onChange={(v) => {
+                      const neu = [...bewertung.vermarktungsTranchen];
+                      neu[idx] = { ...neu[idx], preisCentKwh: v };
+                      updateBewertung("vermarktungsTranchen")(neu);
+                    }}
+                    type="number"
+                    suffix="ct/kWh"
+                    min={0}
+                    max={20}
+                  />
+                  {tranche.art === "PPA-Vertrag" && (
+                    <TextInput
+                      label="Abnahmemenge"
+                      value={tranche.abnahmeMwh}
+                      onChange={(v) => {
+                        const neu = [...bewertung.vermarktungsTranchen];
+                        neu[idx] = { ...neu[idx], abnahmeMwh: v };
+                        updateBewertung("vermarktungsTranchen")(neu);
+                      }}
+                      type="number"
+                      suffix="MWh/a"
+                      min={0}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {(() => {
+              const summe = bewertung.vermarktungsTranchen.reduce((s, t) => s + (parseFloat(t.anteilProzent) || 0), 0);
+              const gewPreis = summe > 0
+                ? bewertung.vermarktungsTranchen.reduce((s, t) => s + ((parseFloat(t.anteilProzent) || 0) / summe) * (parseFloat(t.preisCentKwh) || 0), 0)
+                : 0;
+              return (
+                <div style={{
+                  padding: "8px 12px",
+                  background: summe === 100 ? COLORS.lightBlue : COLORS.warningBg,
+                  borderRadius: 6,
+                  fontSize: 12,
+                  border: `1px solid ${summe === 100 ? "#dde8f0" : COLORS.warningBorder}`,
+                  marginBottom: 10,
+                }}>
+                  <span style={{ fontWeight: 700 }}>Summe: {summe}%</span>
+                  {summe !== 100 && <span style={{ color: COLORS.red, marginLeft: 8 }}>(sollte 100% ergeben)</span>}
+                  {summe > 0 && <span style={{ marginLeft: 12, color: COLORS.mid }}>Ø Preis: {gewPreis.toFixed(1)} ct/kWh</span>}
+                </div>
+              );
+            })()}
+
+            <div style={{ marginTop: 4 }}>
               <TextInput
                 label="Entfernung Netzverknüpfungspunkt"
                 value={bewertung.nvpEntfernungKm}

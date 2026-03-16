@@ -274,10 +274,11 @@ export const VERMARKTUNGSARTEN = [
 
 export const AUSGLEICH_TYPEN = [
   "Keine Ausgleichsflächen",
-  "Extensivierung (günstig)",
-  "Aufforstung (mittel)",
-  "Biotopanlage (teuer)",
-  "Artenschutz (sehr teuer)",
+  "Extensivierung",
+  "Aufforstung",
+  "Biotopanlage",
+  "Artenschutz",
+  "Sonstige Maßnahme",
 ];
 
 export const PRIVILEGIERUNG_OPTIONEN = [
@@ -346,20 +347,27 @@ export function berechneFairScore(bewertung) {
     erklaerung: bewuchsAnpassung < 0 ? "Rodungskosten + SAP-Reduktion durch Verschattung" : "Kaum Einfluss auf Ertrag",
   });
 
-  // 5. Ausgleichsflächen
+  // 5. Ausgleichsflächen (ha + Kosten/ha)
   const ausgleichHa = parseFloat(bewertung.ausgleichsflaecheHa) || 0;
   const ausgleichTyp = bewertung.ausgleichstyp || "Keine Ausgleichsflächen";
-  let ausgleichKostenFaktor = 0;
-  if (ausgleichTyp.startsWith("Extensivierung")) ausgleichKostenFaktor = 1;
-  else if (ausgleichTyp.startsWith("Aufforstung")) ausgleichKostenFaktor = 1.5;
-  else if (ausgleichTyp.startsWith("Biotopanlage")) ausgleichKostenFaktor = 2;
-  else if (ausgleichTyp.startsWith("Artenschutz")) ausgleichKostenFaktor = 3;
-  const ausgleichAnpassung = ausgleichTyp === "Keine Ausgleichsflächen" ? 2 : Math.max(-15, Math.round(-ausgleichHa * 2 * ausgleichKostenFaktor));
+  const ausgleichKostenProHa = parseFloat(bewertung.ausgleichskostenProHa) || 0;
+  const ausgleichGesamtkosten = ausgleichHa * ausgleichKostenProHa;
+  let ausgleichAnpassung = 2; // Bonus wenn keine
+  if (ausgleichTyp !== "Keine Ausgleichsflächen" && ausgleichHa > 0) {
+    // Je höher die Gesamtkosten, desto stärker der Abzug
+    // Referenz: 10.000 €/ha × 1 ha = -2%, bis max -15%
+    ausgleichAnpassung = Math.max(-15, Math.round(-ausgleichGesamtkosten / 5000));
+  }
+  const ausgleichWertText = ausgleichTyp === "Keine Ausgleichsflächen"
+    ? "Keine"
+    : `${ausgleichHa} ha × ${ausgleichKostenProHa.toLocaleString("de-DE")} €/ha = ${ausgleichGesamtkosten.toLocaleString("de-DE")} € (${ausgleichTyp})`;
   faktoren.push({
     name: "Ausgleichsflächen",
-    wert: ausgleichTyp === "Keine Ausgleichsflächen" ? "Keine" : `${ausgleichHa} ha (${ausgleichTyp})`,
+    wert: ausgleichWertText,
     anpassung: ausgleichAnpassung,
-    erklaerung: ausgleichAnpassung >= 0 ? "Keine ökologischen Ausgleichsmaßnahmen nötig" : `Kosten für ${ausgleichHa} ha Ausgleich (${ausgleichTyp})`,
+    erklaerung: ausgleichAnpassung >= 0
+      ? "Keine ökologischen Ausgleichsmaßnahmen nötig"
+      : `Gesamtkosten ${ausgleichGesamtkosten.toLocaleString("de-DE")} € für ${ausgleichHa} ha ${ausgleichTyp}`,
   });
 
   // 6. Zuwegung / Aufschotterung
@@ -409,16 +417,28 @@ export function berechneFairScore(bewertung) {
     erklaerung: neigungAnpassung > 0 ? "Südneigung verbessert Ertrag" : neigungAnpassung < -5 ? "Nordneigung reduziert Ertrag erheblich" : neigungAnpassung < 0 ? "Ungünstige Ausrichtung" : "Ebene Fläche – neutral",
   });
 
-  // 9. Vermarktungsart + Preis
-  const vermarktungsart = bewertung.vermarktungsart || "EEG-Ausschreibung";
-  const einspeiseverguetung = parseFloat(bewertung.einspeiseverguetung) || 5.5;
+  // 9. Vermarktung – mehrere Tranchen möglich
+  const tranchen = bewertung.vermarktungsTranchen || [];
+  let gewichteterPreis = 5.5; // Fallback
+  if (tranchen.length > 0) {
+    const gesamtAnteil = tranchen.reduce((s, t) => s + (parseFloat(t.anteilProzent) || 0), 0);
+    if (gesamtAnteil > 0) {
+      gewichteterPreis = tranchen.reduce((s, t) => {
+        const anteil = (parseFloat(t.anteilProzent) || 0) / gesamtAnteil;
+        return s + anteil * (parseFloat(t.preisCentKwh) || 0);
+      }, 0);
+    }
+  }
   // Referenz: 5.5 ct/kWh als EEG-Mittelwert
-  const preisAnpassung = Math.max(-8, Math.min(10, Math.round((einspeiseverguetung - 5.5) * 2.5)));
+  const preisAnpassung = Math.max(-8, Math.min(10, Math.round((gewichteterPreis - 5.5) * 2.5)));
+  const tranchenText = tranchen.length > 0
+    ? tranchen.map((t) => `${t.art} ${t.anteilProzent}% @ ${t.preisCentKwh} ct${t.art === "PPA-Vertrag" && t.abnahmeMwh ? ` (${t.abnahmeMwh} MWh)` : ""}`).join(" + ")
+    : "Keine Angabe";
   faktoren.push({
-    name: "Vermarktung / Einspeisevergütung",
-    wert: `${vermarktungsart} – ${einspeiseverguetung} ct/kWh`,
+    name: "Vermarktungsmix",
+    wert: `Ø ${gewichteterPreis.toFixed(1)} ct/kWh – ${tranchenText}`,
     anpassung: preisAnpassung,
-    erklaerung: preisAnpassung > 0 ? "Überdurchschnittliche Erlöse" : preisAnpassung < 0 ? "Unterdurchschnittliche Erlöse" : "Durchschnittlicher EEG-Preis",
+    erklaerung: preisAnpassung > 0 ? "Überdurchschnittlicher Erlösmix" : preisAnpassung < 0 ? "Unterdurchschnittliche Erlöse" : "Durchschnittlicher Erlösmix",
   });
 
   // 10. Entfernung Netzverknüpfungspunkt
