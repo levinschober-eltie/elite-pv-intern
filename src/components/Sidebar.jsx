@@ -9,6 +9,8 @@ const NAV_ITEMS = [
   { path: "/dachpacht", icon: "🏢", label: "Dachpacht" },
   { path: "/freiflaeche", icon: "🌾", label: "Freifläche" },
   { path: "/bess", icon: "🔋", label: "BESS" },
+  { path: "/leitungsweg", icon: "🔌", label: "Leitungsweg" },
+  { path: "/bauleitplanung", icon: "🏗️", label: "Bauleitplanung" },
   { path: "/kunden", icon: "👥", label: "Kunden" },
   { path: "/vorlagen", icon: "🔒", label: "Vorlagen" },
 ];
