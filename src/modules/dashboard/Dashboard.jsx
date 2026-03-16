@@ -48,7 +48,7 @@ const MODULE = [
     icon: "🏗️",
     label: "Bauleitplanung",
     status: "Aktiv",
-    color: "#E65100",
+    color: "#0277BD",
     path: "/bauleitplanung",
   },
   {
