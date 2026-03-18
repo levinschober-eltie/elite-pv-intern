@@ -3,6 +3,8 @@
 // Basis: Vorderthürn-Vertrag (Erbengemeinschaft Schuierer)
 // ============================================================
 
+import { safeParseFloat, safeParseInt } from "../../lib/formatters";
+
 // ============================================================
 // MODELL A: Festpacht pro Hektar (mit Staffelung)
 // Referenz: Vorderthürn §8 – 3.300/3.400/3.500 €/ha
@@ -694,59 +696,59 @@ export function wendeFairScoreAn(modellErgebnis, fairScore) {
 // MASTER-FUNKTION: Alle 4 Modelle berechnen
 // ============================================================
 export function berechneFreiflaeche(formData) {
-  const pachtflaecheHa = parseFloat(formData.pachtflaecheHa) || 0;
-  const gesamtflaecheHa = parseFloat(formData.gesamtflaecheHa) || 0;
-  const leistungMwp = parseFloat(formData.leistungMwp) || 0;
-  const laufzeitJahre = parseInt(formData.laufzeitJahre) || 20;
+  const pachtflaecheHa = safeParseFloat(formData.pachtflaecheHa, 0);
+  const gesamtflaecheHa = safeParseFloat(formData.gesamtflaecheHa, 0);
+  const leistungMwp = safeParseFloat(formData.leistungMwp, 0);
+  const laufzeitJahre = safeParseInt(formData.laufzeitJahre, 20);
 
   const modellA = berechneModellA({
     pachtflaecheHa,
-    staffel1: parseFloat(formData.staffel1) || 3300,
-    staffel2: parseFloat(formData.staffel2) || 3400,
-    staffel3: parseFloat(formData.staffel3) || 3500,
-    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
+    staffel1: safeParseFloat(formData.staffel1, 3300),
+    staffel2: safeParseFloat(formData.staffel2, 3400),
+    staffel3: safeParseFloat(formData.staffel3, 3500),
+    wertsicherungProzent: safeParseFloat(formData.wertsicherungProzent, 10),
     laufzeitJahre,
   });
 
   const modellB = berechneModellB({
     leistungMwp,
-    satzProMwp: parseFloat(formData.satzProMwp) || 6000,
-    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
+    satzProMwp: safeParseFloat(formData.satzProMwp, 6000),
+    wertsicherungProzent: safeParseFloat(formData.wertsicherungProzent, 10),
     laufzeitJahre,
   });
 
   const modellC = berechneModellC({
     leistungMwp,
-    spezifischerErtrag: parseFloat(formData.spezifischerErtrag) || 1000,
-    strompreisCentKwh: parseFloat(formData.strompreisCentKwh) || 7,
-    prozentsatz: parseFloat(formData.ertragsProzentsatz) || 6,
-    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
+    spezifischerErtrag: safeParseFloat(formData.spezifischerErtrag, 1000),
+    strompreisCentKwh: safeParseFloat(formData.strompreisCentKwh, 7),
+    prozentsatz: safeParseFloat(formData.ertragsProzentsatz, 6),
+    wertsicherungProzent: safeParseFloat(formData.wertsicherungProzent, 10),
     laufzeitJahre,
   });
 
   const modellD = berechneModellD({
     pachtflaecheHa,
     leistungMwp,
-    mindestpachtProHa: parseFloat(formData.mindestpachtProHa) || 2500,
-    spezifischerErtrag: parseFloat(formData.spezifischerErtrag) || 1000,
-    strompreisCentKwh: parseFloat(formData.strompreisCentKwh) || 7,
-    erloesProzentsatz: parseFloat(formData.erloesProzentsatz) || 4,
-    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
+    mindestpachtProHa: safeParseFloat(formData.mindestpachtProHa, 2500),
+    spezifischerErtrag: safeParseFloat(formData.spezifischerErtrag, 1000),
+    strompreisCentKwh: safeParseFloat(formData.strompreisCentKwh, 7),
+    erloesProzentsatz: safeParseFloat(formData.erloesProzentsatz, 4),
+    wertsicherungProzent: safeParseFloat(formData.wertsicherungProzent, 10),
     laufzeitJahre,
   });
 
   const vorhalteverguetung = berechneVorhalteverguetung(
-    parseFloat(formData.vorhalteBetrag) || 500
+    safeParseFloat(formData.vorhalteBetrag, 500)
   );
 
   const speicher = berechneSpeicherVerguetung(
-    parseFloat(formData.speicherflaecheM2) || 0,
-    parseFloat(formData.speicherSatzM2) || 5
+    safeParseFloat(formData.speicherflaecheM2, 0),
+    safeParseFloat(formData.speicherSatzM2, 5)
   );
 
   const rueckbau = berechneRueckbaubuergschaft(
     leistungMwp * 1000,
-    parseFloat(formData.rueckbauSatzKw) || 15
+    safeParseFloat(formData.rueckbauSatzKw, 15)
   );
 
   // Fair-Score berechnen wenn Bewertungsdaten vorhanden

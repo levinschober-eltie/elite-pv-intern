@@ -483,14 +483,14 @@ export function createDocxSignatureBlock(partyA, partyB, options = {}) {
             }),
           ],
         }),
-        // Namen
+        // Namen (unterstützt mehrzeilige Namen via \n)
         new TableRow({
           children: [
             new TableCell({
               width: { size: halfWidth, type: WidthType.DXA },
               borders: noBorders,
               margins: cellMargins,
-              children: [new Paragraph({ children: [new TextRun({ text: partyA, size: 16, font: "DM Sans", color: ELITE_MID })] })],
+              children: String(partyA).split("\n").map(line => new Paragraph({ children: [new TextRun({ text: line, size: 16, font: "DM Sans", color: ELITE_MID })] })),
             }),
             new TableCell({
               width: { size: 200, type: WidthType.DXA },
@@ -501,7 +501,7 @@ export function createDocxSignatureBlock(partyA, partyB, options = {}) {
               width: { size: halfWidth, type: WidthType.DXA },
               borders: noBorders,
               margins: cellMargins,
-              children: [new Paragraph({ children: [new TextRun({ text: partyB, size: 16, font: "DM Sans", color: ELITE_MID })] })],
+              children: String(partyB).split("\n").map(line => new Paragraph({ children: [new TextRun({ text: line, size: 16, font: "DM Sans", color: ELITE_MID })] })),
             }),
           ],
         }),

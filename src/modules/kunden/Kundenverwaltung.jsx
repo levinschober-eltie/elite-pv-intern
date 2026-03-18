@@ -44,7 +44,12 @@ function loadKunden() {
 }
 
 function saveKunden(kunden) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(kunden));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(kunden));
+  } catch (e) {
+    console.error("saveKunden fehlgeschlagen:", e);
+    throw e;
+  }
 }
 
 function formatDate(isoStr) {
@@ -75,7 +80,11 @@ export default function Kundenverwaltung() {
 
   // Persist on change
   useEffect(() => {
-    saveKunden(kunden);
+    try {
+      saveKunden(kunden);
+    } catch (e) {
+      showToast("Speichern fehlgeschlagen – localStorage voll?", "error");
+    }
   }, [kunden]);
 
   // ---- Form helpers ----
@@ -134,7 +143,7 @@ export default function Kundenverwaltung() {
         geaendertAm: now,
       };
       setKunden((prev) => [neuerKunde, ...prev]);
-      showToast("Kunde hinzugefuegt.");
+      showToast("Kunde hinzugefügt.");
     }
     closeForm();
   };
@@ -143,7 +152,7 @@ export default function Kundenverwaltung() {
   const handleDelete = (id) => {
     setKunden((prev) => prev.filter((k) => k.id !== id));
     setDeleteConfirm(null);
-    showToast("Kunde geloescht.");
+    showToast("Kunde gelöscht.");
   };
 
   // ---- Export ----
@@ -176,7 +185,7 @@ export default function Kundenverwaltung() {
       try {
         const imported = JSON.parse(e.target.result);
         if (!Array.isArray(imported)) {
-          showToast("Ungueltige Datei: Kein Array.", "error");
+          showToast("Ungültige Datei: Kein Array.", "error");
           return;
         }
         // Validate: each item must have a name field
@@ -393,7 +402,7 @@ export default function Kundenverwaltung() {
               Abbrechen
             </button>
             <button style={styles.btnPrimary} onClick={handleSave}>
-              {editId ? "Speichern" : "Hinzufuegen"}
+              {editId ? "Speichern" : "Hinzufügen"}
             </button>
           </div>
         </Section>
@@ -411,7 +420,7 @@ export default function Kundenverwaltung() {
         >
           {kunden.length === 0
             ? "Noch keine Kunden vorhanden. Legen Sie Ihren ersten Kunden an."
-            : "Keine Kunden fuer diesen Filter gefunden."}
+            : "Keine Kunden für diesen Filter gefunden."}
         </div>
       ) : (
         gefilterteKunden.map((kunde, idx) => {
@@ -492,7 +501,7 @@ export default function Kundenverwaltung() {
                         }}
                         onClick={() => handleDelete(kunde.id)}
                       >
-                        Ja, loeschen
+                        Ja, löschen
                       </button>
                       <button
                         style={{
@@ -516,7 +525,7 @@ export default function Kundenverwaltung() {
                       }}
                       onClick={() => setDeleteConfirm(kunde.id)}
                     >
-                      Loeschen
+                      Löschen
                     </button>
                   )}
                 </div>
@@ -582,7 +591,7 @@ export default function Kundenverwaltung() {
                 <span style={{ fontSize: 11, color: COLORS.mid }}>
                   Erstellt: {formatDate(kunde.erstelltAm)}
                   {kunde.geaendertAm !== kunde.erstelltAm &&
-                    ` | Geaendert: ${formatDate(kunde.geaendertAm)}`}
+                    ` | Geändert: ${formatDate(kunde.geaendertAm)}`}
                 </span>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button

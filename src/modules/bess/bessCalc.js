@@ -3,6 +3,8 @@
 // Basis: Enerpeak BESS-Vorlage (Flächennutzungsvertrag)
 // ============================================================
 
+import { safeParseFloat, safeParseInt } from "../../lib/formatters";
+
 // ============================================================
 // MODELL A: Festpacht pro m² BESS-Fläche
 // Referenz: Enerpeak §5 – [...] €/m²
@@ -170,44 +172,44 @@ export const BESS_TECHNOLOGIEN = [
 // MASTER-FUNKTION: Alle 3 Modelle berechnen
 // ============================================================
 export function berechneBESS(formData) {
-  const bessFlaecheM2 = parseFloat(formData.bessFlaecheM2) || 0;
-  const leistungMw = parseFloat(formData.leistungMw) || 0;
-  const kapazitaetMwh = parseFloat(formData.kapazitaetMwh) || 0;
-  const laufzeitJahre = parseInt(formData.laufzeitJahre) || 20;
+  const bessFlaecheM2 = safeParseFloat(formData.bessFlaecheM2, 0);
+  const leistungMw = safeParseFloat(formData.leistungMw, 0);
+  const kapazitaetMwh = safeParseFloat(formData.kapazitaetMwh, 0);
+  const laufzeitJahre = safeParseInt(formData.laufzeitJahre, 20);
 
   const modellA = berechneModellA({
     bessFlaecheM2,
-    satzProM2: parseFloat(formData.satzProM2) || 8,
-    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
+    satzProM2: safeParseFloat(formData.satzProM2, 8),
+    wertsicherungProzent: safeParseFloat(formData.wertsicherungProzent, 10),
     laufzeitJahre,
   });
 
   const modellB = berechneModellB({
     leistungMw,
-    satzProMw: parseFloat(formData.satzProMw) || 15000,
-    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
+    satzProMw: safeParseFloat(formData.satzProMw, 15000),
+    wertsicherungProzent: safeParseFloat(formData.wertsicherungProzent, 10),
     laufzeitJahre,
   });
 
   const modellC = berechneModellC({
     leistungMw,
     kapazitaetMwh,
-    zyklenProJahr: parseInt(formData.zyklenProJahr) || 300,
-    strompreisEurMwh: parseFloat(formData.strompreisEurMwh) || 80,
-    revenueProzent: parseFloat(formData.revenueProzent) || 5,
-    wertsicherungProzent: parseFloat(formData.wertsicherungProzent) || 10,
+    zyklenProJahr: safeParseInt(formData.zyklenProJahr, 300),
+    strompreisEurMwh: safeParseFloat(formData.strompreisEurMwh, 80),
+    revenueProzent: safeParseFloat(formData.revenueProzent, 5),
+    wertsicherungProzent: safeParseFloat(formData.wertsicherungProzent, 10),
     laufzeitJahre,
   });
 
   const vorhalteverguetung = berechneVorhalteverguetung(
     bessFlaecheM2,
-    parseFloat(formData.satzProM2) || 8,
-    parseFloat(formData.vorhalteProzent) || 50
+    safeParseFloat(formData.satzProM2, 8),
+    safeParseFloat(formData.vorhalteProzent, 50)
   );
 
   const rueckbau = berechneRueckbaubuergschaft(
     bessFlaecheM2,
-    parseFloat(formData.rueckbauSatzM2) || 25
+    safeParseFloat(formData.rueckbauSatzM2, 25)
   );
 
   return {
