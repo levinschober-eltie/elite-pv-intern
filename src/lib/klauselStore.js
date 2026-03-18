@@ -41,14 +41,23 @@ export function setKlauseln(modulKey, klauseln) {
  * Löscht gespeicherte Klauseln (Reset auf Defaults).
  */
 export function resetKlauseln(modulKey) {
-  localStorage.removeItem(STORAGE_PREFIX + modulKey);
+  try {
+    localStorage.removeItem(STORAGE_PREFIX + modulKey);
+  } catch (e) {
+    console.error("resetKlauseln fehlgeschlagen:", e);
+  }
 }
 
 /**
  * Prüft ob für ein Modul eigene Vorlagen gespeichert sind.
  */
 export function hatEigeneVorlagen(modulKey) {
-  return localStorage.getItem(STORAGE_PREFIX + modulKey) !== null;
+  try {
+    return localStorage.getItem(STORAGE_PREFIX + modulKey) !== null;
+  } catch (e) {
+    console.error("hatEigeneVorlagen fehlgeschlagen:", e);
+    return false;
+  }
 }
 
 export const MODUL_KEYS = {
@@ -56,4 +65,6 @@ export const MODUL_KEYS = {
   dachpacht: "dachpacht",
   freiflaeche: "freiflaeche",
   bess: "bess",
+  leitungsweg: "leitungsweg",
+  bauleitplanung: "bauleitplanung",
 };

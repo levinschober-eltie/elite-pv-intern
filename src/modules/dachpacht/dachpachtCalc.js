@@ -2,6 +2,8 @@
 // DACHPACHT – Kalkulation (3 Modelle)
 // ============================================================
 
+import { safeParseFloat, safeParseInt } from "../../lib/formatters";
+
 const rund2 = (v) => Math.round(v * 100) / 100;
 
 // kWp-Faktoren pro m² nach Dachtyp
@@ -30,7 +32,7 @@ export const GEBAEUDE_TYPEN = ["Wohngebäude", "Gewerbe", "Industrie", "Landwirt
 export const AUSRICHTUNGEN = ["Süd", "Süd-Ost", "Süd-West", "Ost", "West", "Nord"];
 
 // kWp aus Fläche berechnen
-export function berechneKwpAusFleache(nutzbarM2, dachtyp) {
+export function berechneKwpAusFlaeche(nutzbarM2, dachtyp) {
   const faktor = DACHTYP_FAKTOREN[dachtyp] || 8;
   return nutzbarM2 / faktor;
 }
@@ -152,32 +154,32 @@ function berechneModell3(params) {
 // MASTER-FUNKTION: Alle 3 Modelle berechnen
 // ============================================================
 export function berechneDachpacht(formData) {
-  const nutzbar = parseFloat(formData.nutzbareDachflaeche) || 0;
+  const nutzbar = safeParseFloat(formData.nutzbareDachflaeche, 0);
   const dachtyp = formData.dachtyp || "Satteldach Süd";
-  const kwpAusFleache = berechneKwpAusFleache(nutzbar, dachtyp);
-  const leistungKwp = parseFloat(formData.leistungKwp) || kwpAusFleache;
-  const laufzeitJahre = parseInt(formData.laufzeitJahre) || 20;
+  const kwpAusFleache = berechneKwpAusFlaeche(nutzbar, dachtyp);
+  const leistungKwp = safeParseFloat(formData.leistungKwp, kwpAusFleache);
+  const laufzeitJahre = safeParseInt(formData.laufzeitJahre, 20);
 
   const modell1 = berechneModell1({
     leistungKwp,
-    satzProKwp: parseFloat(formData.satzProKwp) || 30,
-    preisanpassungProzent: parseFloat(formData.preisanpassung1) || 1.5,
+    satzProKwp: safeParseFloat(formData.satzProKwp, 30),
+    preisanpassungProzent: safeParseFloat(formData.preisanpassung1, 1.5),
     laufzeitJahre,
   });
 
   const modell2 = berechneModell2({
     leistungKwp,
-    spezifischerErtrag: parseFloat(formData.spezifischerErtrag) || 950,
-    strompreisCentKwh: parseFloat(formData.strompreisCentKwh) || 8,
-    prozentsatz: parseFloat(formData.ertragsProzentsatz) || 5,
-    preisanpassungProzent: parseFloat(formData.preisanpassung2) || 1.5,
+    spezifischerErtrag: safeParseFloat(formData.spezifischerErtrag, 950),
+    strompreisCentKwh: safeParseFloat(formData.strompreisCentKwh, 8),
+    prozentsatz: safeParseFloat(formData.ertragsProzentsatz, 5),
+    preisanpassungProzent: safeParseFloat(formData.preisanpassung2, 1.5),
     laufzeitJahre,
   });
 
   const modell3 = berechneModell3({
     nutzbareDachflaeche: nutzbar,
-    satzProM2: parseFloat(formData.satzProM2) || 5,
-    preisanpassungProzent: parseFloat(formData.preisanpassung3) || 1.5,
+    satzProM2: safeParseFloat(formData.satzProM2, 5),
+    preisanpassungProzent: safeParseFloat(formData.preisanpassung3, 1.5),
     laufzeitJahre,
   });
 

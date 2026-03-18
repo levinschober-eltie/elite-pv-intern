@@ -4,18 +4,25 @@ import { DEFAULT_KLAUSELN } from "../wartung/wartungClauses";
 import { DACHPACHT_KLAUSELN } from "../dachpacht/dachpachtClauses";
 import { FREIFLAECHE_KLAUSELN } from "../freiflaeche/freiflaecheClauses";
 import { BESS_KLAUSELN } from "../bess/bessClauses";
+import { GEMEINDE_KLAUSELN, PRIVAT_KLAUSELN } from "../leitungsweg/leitungswegClauses";
+import { DURCHFUEHRUNG_KLAUSELN, KOMMUNAL_KLAUSELN, AUSGLEICH_KLAUSELN } from "../bauleitplanung/bauleitplanungClauses";
 import { getKlauseln, setKlauseln, resetKlauseln, hatEigeneVorlagen } from "../../lib/klauselStore";
 import ClauseEditor from "../../components/ClauseEditor";
 import Section from "../../components/Section";
 import { useToast } from "../../components/Toast";
 
-const PASSWORT = "code1234";
+const PASSWORT = import.meta.env.VITE_ADMIN_PASSWORD || "code1234";
 
 const MODULE = [
   { key: "wartung", label: "Wartung", icon: "\uD83D\uDCCB", defaults: DEFAULT_KLAUSELN },
   { key: "dachpacht", label: "Dachpacht", icon: "\uD83C\uDFE2", defaults: DACHPACHT_KLAUSELN },
   { key: "freiflaeche", label: "Freifl\u00E4che", icon: "\uD83C\uDF3E", defaults: FREIFLAECHE_KLAUSELN },
   { key: "bess", label: "BESS", icon: "\uD83D\uDD0B", defaults: BESS_KLAUSELN },
+  { key: "leitungsweg", label: "Leitungsweg (Privat)", icon: "\u26A1", defaults: PRIVAT_KLAUSELN },
+  { key: "leitungsweg-gemeinde", label: "Leitungsweg (Gemeinde)", icon: "\uD83C\uDFDB\uFE0F", defaults: GEMEINDE_KLAUSELN },
+  { key: "bauleitplanung-df", label: "Durchf\u00FChrung", icon: "\uD83C\uDFD7\uFE0F", defaults: DURCHFUEHRUNG_KLAUSELN },
+  { key: "bauleitplanung-kb", label: "Kommunal", icon: "\uD83C\uDFE0", defaults: KOMMUNAL_KLAUSELN },
+  { key: "bauleitplanung-ag", label: "\u00D6ko-Ausgleich", icon: "\uD83C\uDF3F", defaults: AUSGLEICH_KLAUSELN },
 ];
 
 function PasswordGate({ onUnlock }) {
