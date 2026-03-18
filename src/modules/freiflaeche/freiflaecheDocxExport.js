@@ -482,6 +482,7 @@ export async function generateFreiflaecheVertragDocx(formData, ergebnis, klausel
     ],
     klauseln: ersetzte,
     signatureParties: ["Elite PV GmbH (Betreiberin)", `${name} (Eigentümer)`],
+    signatureImages: formData.signatureImages,
     fileName: `Gestattungsvertrag_Freiflaeche_${(name || "Kunde").replace(/[\s,]+/g, "_")}_Elite_PV.docx`,
   });
 }

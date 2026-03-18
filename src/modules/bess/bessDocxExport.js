@@ -404,6 +404,7 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
     ],
     klauseln: ersetzte,
     signatureParties: ["Elite PV GmbH (Grundstücksnutzer)", `${name} (Grundstückseigentümer)`],
+    signatureImages: formData.signatureImages,
     fileName: `Flaechennutzungsvertrag_BESS_${(name || "Kunde").replace(/[\s,]+/g, "_")}_Elite_PV.docx`,
   });
 }

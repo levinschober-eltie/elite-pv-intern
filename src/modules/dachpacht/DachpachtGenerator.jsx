@@ -3,7 +3,7 @@ import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import {
   berechneDachpacht,
-  berechneKwpAusFleache,
+  berechneKwpAusFlaeche,
   DACHTYPEN,
   DACH_MATERIALIEN,
   STATIK_OPTIONEN,
@@ -30,6 +30,9 @@ import OwnerFields, { createDefaultEigentuemer } from "../../components/OwnerFie
 import LandRegisterFields, { createDefaultGrundbuch } from "../../components/LandRegisterFields";
 import WarningBanner from "../../components/WarningBanner";
 import { useToast } from "../../components/Toast";
+import ProjectSelector from "../../components/ProjectSelector";
+import SignaturePad from "../../components/SignaturePad";
+import { addVertragToProjekt } from "../../modules/projekte/projektStore";
 
 // ============================================================
 // MODELL-KARTE
@@ -104,6 +107,10 @@ export default function DachpachtGenerator() {
     () => getKlauseln("dachpacht", DACHPACHT_KLAUSELN)
   );
 
+  const [selectedProjekt, setSelectedProjekt] = useState(null);
+  const [signaturVerpachter, setSignaturVerpachter] = useState({ name: "", date: "", data: null });
+  const [signaturPachter, setSignaturPachter] = useState({ name: "Elite PV GmbH", date: "", data: null });
+
   const [eigentuemer, setEigentuemer] = useState(createDefaultEigentuemer());
   const [grundbuch, setGrundbuch] = useState(createDefaultGrundbuch());
 
@@ -137,6 +144,14 @@ export default function DachpachtGenerator() {
     gewaehlteModell: 1,
   });
 
+  const handleProjektSelect = (projekt) => {
+    setSelectedProjekt(projekt);
+    if (projekt) {
+      if (projekt.eigentuemer) setEigentuemer(projekt.eigentuemer);
+      if (projekt.grundbuch) setGrundbuch(projekt.grundbuch);
+    }
+  };
+
   const update = (key) => (value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -147,20 +162,22 @@ export default function DachpachtGenerator() {
     : Math.round((parseFloat(formData.bruttoDachflaeche) || 0) * 0.8);
 
   // kWp auto-berechnen
-  const autoKwp = berechneKwpAusFleache(nutzbareFlaeche, formData.dachtyp);
+  const autoKwp = berechneKwpAusFlaeche(nutzbareFlaeche, formData.dachtyp);
   const effektivKwp = formData.leistungManuell
     ? parseFloat(formData.leistungKwp) || 0
     : autoKwp;
 
   // Kalkulation
-  const kalkulationsDaten = {
-    ...formData,
-    nutzbareDachflaeche: nutzbareFlaeche,
-    leistungKwp: effektivKwp,
-    eigentuemer,
-    grundbuch,
-  };
-  const ergebnis = useMemo(() => berechneDachpacht(kalkulationsDaten), [
+  const ergebnis = useMemo(() => {
+    const kalkulationsDaten = {
+      ...formData,
+      nutzbareDachflaeche: nutzbareFlaeche,
+      leistungKwp: effektivKwp,
+      eigentuemer,
+      grundbuch,
+    };
+    return berechneDachpacht(kalkulationsDaten);
+  }, [
     nutzbareFlaeche,
     effektivKwp,
     formData.satzProKwp,
@@ -205,7 +222,7 @@ export default function DachpachtGenerator() {
   // Export möglich?
   const exportGesperrt = fehler.length > 0;
 
-  const tabNamen = ["Eigentümer", "Gebäude", "Dachfläche", "Pachtmodell", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Eigentümer", "Gebäude", "Dachfläche", "Pachtmodell", "Ergebnis", "Vertrag", "Unterschriften"];
 
   // DOCX-Export
   const handleDocxExport = async (typ) => {
@@ -217,16 +234,32 @@ export default function DachpachtGenerator() {
         leistungKwp: effektivKwp,
         eigentuemer,
         grundbuch,
+        signatureImages: {
+          signatureImageA: signaturVerpachter.data,
+          signatureImageB: signaturPachter.data,
+        },
       };
+      let dateiname;
       if (typ === "preisblatt") {
         await generateDachpachtPreisblattDocx(exportData, ergebnis);
+        dateiname = "Preisblatt_Dachpacht";
       } else {
         await generateDachpachtVertragDocx(exportData, ergebnis, klauseln);
+        dateiname = "Nutzungsvertrag_Dachpacht";
       }
+      if (selectedProjekt?.id) {
+        addVertragToProjekt(selectedProjekt.id, {
+          typ: "Dachpacht",
+          datum: new Date().toISOString(),
+          dateiname: dateiname + ".docx",
+        });
+      }
+      showToast("DOCX erfolgreich erstellt!", "success");
     } catch (error) {
       showToast("DOCX-Fehler: " + error.message, "error");
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   return (
@@ -240,6 +273,10 @@ export default function DachpachtGenerator() {
       {/* ============================================================ */}
       {activeTab === 0 && (
         <Section title="Eigentümer / Verpächter" icon="👤">
+          <ProjectSelector
+            onSelect={handleProjektSelect}
+            selectedProjektId={selectedProjekt?.id}
+          />
           <OwnerFields eigentuemer={eigentuemer} onChange={setEigentuemer} />
           <NavButtons onNext={() => setActiveTab(1)} />
         </Section>
@@ -717,6 +754,49 @@ export default function DachpachtGenerator() {
             </button>
           </div>
         </>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 6: Unterschriften */}
+      {/* ============================================================ */}
+      {activeTab === 6 && (
+        <Section title="Unterschriften" icon="✍️">
+          <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14 }}>
+            Optional: Digitale Unterschriften für den Vertrag
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <SignaturePad
+              label="Unterschrift Verpächter"
+              name={signaturVerpachter.name}
+              onNameChange={(v) => setSignaturVerpachter(prev => ({ ...prev, name: v }))}
+              date={signaturVerpachter.date}
+              onDateChange={(v) => setSignaturVerpachter(prev => ({ ...prev, date: v }))}
+              signatureData={signaturVerpachter.data}
+              onSignatureChange={(v) => setSignaturVerpachter(prev => ({ ...prev, data: v }))}
+            />
+            <SignaturePad
+              label="Unterschrift Pächter"
+              name={signaturPachter.name}
+              onNameChange={(v) => setSignaturPachter(prev => ({ ...prev, name: v }))}
+              date={signaturPachter.date}
+              onDateChange={(v) => setSignaturPachter(prev => ({ ...prev, date: v }))}
+              signatureData={signaturPachter.data}
+              onSignatureChange={(v) => setSignaturPachter(prev => ({ ...prev, data: v }))}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(5)}>
+              ← Vertrag
+            </button>
+            <button
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
+              onClick={() => handleDocxExport("vertrag")}
+              disabled={isGenerating || exportGesperrt}
+            >
+              {isGenerating ? "Wird erstellt…" : "📄 Vertrag als DOCX"}
+            </button>
+          </div>
+        </Section>
       )}
     </div>
   );

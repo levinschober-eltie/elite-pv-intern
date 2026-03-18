@@ -7,10 +7,12 @@ import {
   BESS_TECHNOLOGIEN,
 } from "./bessCalc";
 import { BESS_KLAUSELN } from "./bessClauses";
+import { getKlauseln } from "../../lib/klauselStore";
 import {
   generateBESSPreisblattDocx,
   generateBESSVertragDocx,
 } from "./bessDocxExport";
+import { useToast } from "../../components/Toast";
 import { TextInput, SelectInput, NavButtons } from "../../components/FormFields";
 import Section from "../../components/Section";
 import Steps from "../../components/Steps";
@@ -20,6 +22,9 @@ import ClauseEditor from "../../components/ClauseEditor";
 import OwnerFields, { createDefaultEigentuemer } from "../../components/OwnerFields";
 import LandRegisterFields, { createDefaultGrundbuch } from "../../components/LandRegisterFields";
 import WarningBanner from "../../components/WarningBanner";
+import ProjectSelector from "../../components/ProjectSelector";
+import SignaturePad from "../../components/SignaturePad";
+import { addVertragToProjekt } from "../../modules/projekte/projektStore";
 
 // ============================================================
 // MODELL-KARTE (A–C)
@@ -89,11 +94,16 @@ function ModellKarte({ modell, aktiv, onClick, modellKey }) {
 // MAIN GENERATOR
 // ============================================================
 export default function BESSGenerator() {
+  const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [klauseln, setKlauseln] = useState(
-    BESS_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("bess", BESS_KLAUSELN)
   );
+
+  const [selectedProjekt, setSelectedProjekt] = useState(null);
+  const [signaturEigentuemer, setSignaturEigentuemer] = useState({ name: "", date: "", data: null });
+  const [signaturBetreiber, setSignaturBetreiber] = useState({ name: "Elite PV GmbH", date: "", data: null });
 
   const [eigentuemer, setEigentuemer] = useState(createDefaultEigentuemer());
   const [grundbuch, setGrundbuch] = useState(createDefaultGrundbuch());
@@ -133,6 +143,14 @@ export default function BESSGenerator() {
     zusatzvereinbarungen: "",
   });
 
+  const handleProjektSelect = (projekt) => {
+    setSelectedProjekt(projekt);
+    if (projekt) {
+      if (projekt.eigentuemer) setEigentuemer(projekt.eigentuemer);
+      if (projekt.grundbuch) setGrundbuch(projekt.grundbuch);
+    }
+  };
+
   const update = (key) => (value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -157,6 +175,7 @@ export default function BESSGenerator() {
     formData.laufzeitJahre,
     formData.vorhalteProzent,
     formData.rueckbauSatzM2,
+    formData.gewaehlteModell,
   ]);
 
   const gewaehltes = ergebnis[`modell${formData.gewaehlteModell}`];
@@ -181,7 +200,7 @@ export default function BESSGenerator() {
   const alleMeldungen = [...fehler.map((f) => "❌ " + f), ...warnungen];
   const exportGesperrt = fehler.length > 0;
 
-  const tabNamen = ["Eigentümer", "Grundstück", "BESS-Technik", "Pachtmodell", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Eigentümer", "Grundstück", "BESS-Technik", "Pachtmodell", "Ergebnis", "Vertrag", "Unterschriften"];
 
   // DOCX-Export
   const handleDocxExport = async (typ) => {
@@ -191,16 +210,32 @@ export default function BESSGenerator() {
         ...formData,
         eigentuemer,
         grundbuch,
+        signatureImages: {
+          signatureImageA: signaturEigentuemer.data,
+          signatureImageB: signaturBetreiber.data,
+        },
       };
+      let dateiname;
       if (typ === "preisblatt") {
         await generateBESSPreisblattDocx(exportData, ergebnis);
+        dateiname = "Preisblatt_BESS";
       } else {
         await generateBESSVertragDocx(exportData, ergebnis, klauseln);
+        dateiname = "Flaechennutzungsvertrag_BESS";
       }
+      if (selectedProjekt?.id) {
+        addVertragToProjekt(selectedProjekt.id, {
+          typ: "BESS",
+          datum: new Date().toISOString(),
+          dateiname: dateiname + ".docx",
+        });
+      }
+      showToast("DOCX erfolgreich erstellt!", "success");
     } catch (error) {
-      alert("DOCX-Fehler: " + error.message);
+      showToast("DOCX-Fehler: " + error.message, "error");
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   return (
@@ -214,6 +249,10 @@ export default function BESSGenerator() {
       {/* ============================================================ */}
       {activeTab === 0 && (
         <Section title="Grundstückseigentümer" icon="👤">
+          <ProjectSelector
+            onSelect={handleProjektSelect}
+            selectedProjektId={selectedProjekt?.id}
+          />
           <OwnerFields eigentuemer={eigentuemer} onChange={setEigentuemer} />
           <NavButtons onNext={() => setActiveTab(1)} />
         </Section>
@@ -634,6 +673,49 @@ export default function BESSGenerator() {
             </button>
           </div>
         </>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 6: Unterschriften */}
+      {/* ============================================================ */}
+      {activeTab === 6 && (
+        <Section title="Unterschriften" icon="✍️">
+          <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14 }}>
+            Optional: Digitale Unterschriften für den Vertrag
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <SignaturePad
+              label="Unterschrift Grundstückseigentümer"
+              name={signaturEigentuemer.name}
+              onNameChange={(v) => setSignaturEigentuemer(prev => ({ ...prev, name: v }))}
+              date={signaturEigentuemer.date}
+              onDateChange={(v) => setSignaturEigentuemer(prev => ({ ...prev, date: v }))}
+              signatureData={signaturEigentuemer.data}
+              onSignatureChange={(v) => setSignaturEigentuemer(prev => ({ ...prev, data: v }))}
+            />
+            <SignaturePad
+              label="Unterschrift Betreiber"
+              name={signaturBetreiber.name}
+              onNameChange={(v) => setSignaturBetreiber(prev => ({ ...prev, name: v }))}
+              date={signaturBetreiber.date}
+              onDateChange={(v) => setSignaturBetreiber(prev => ({ ...prev, date: v }))}
+              signatureData={signaturBetreiber.data}
+              onSignatureChange={(v) => setSignaturBetreiber(prev => ({ ...prev, data: v }))}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(5)}>
+              ← Vertrag
+            </button>
+            <button
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
+              onClick={() => handleDocxExport("vertrag")}
+              disabled={isGenerating || exportGesperrt}
+            >
+              {isGenerating ? "Wird erstellt…" : "📄 Vertrag als DOCX"}
+            </button>
+          </div>
+        </Section>
       )}
     </div>
   );

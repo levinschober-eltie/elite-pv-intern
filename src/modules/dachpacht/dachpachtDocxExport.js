@@ -432,6 +432,7 @@ export async function generateDachpachtVertragDocx(formData, ergebnis, klauseln)
     ],
     klauseln: ersetzte,
     signatureParties: ["Elite PV GmbH (Nutzer)", `${name} (Eigentümer)`],
+    signatureImages: formData.signatureImages,
     fileName: `Nutzungsvertrag_Dachpacht_${(name || "Kunde").replace(/[\s,]+/g, "_")}_Elite_PV.docx`,
   });
 }

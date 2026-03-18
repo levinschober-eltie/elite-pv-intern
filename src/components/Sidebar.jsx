@@ -5,6 +5,7 @@ import { LOGO_B64 } from "../assets/logo";
 
 const NAV_ITEMS = [
   { path: "/", icon: "🏠", label: "Dashboard" },
+  { path: "/projekte", icon: "📂", label: "Projekte" },
   { path: "/wartung", icon: "📋", label: "Wartung" },
   { path: "/dachpacht", icon: "🏢", label: "Dachpacht" },
   { path: "/freiflaeche", icon: "🌾", label: "Freifläche" },

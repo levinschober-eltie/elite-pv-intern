@@ -93,6 +93,7 @@ export async function generateWartungDocx(formData, ergebnis, klauseln) {
     signatureParties: mitVertrag
       ? ["Elite PV GmbH (AN)", "Auftraggeber (AG)"]
       : null,
+    signatureImages: formData.signatureImages,
     fileName: `${mitVertrag ? "Vertrag" : "Preisblatt"}_${
       (formData.kundenname || "Kunde").replace(/\s+/g, "_")
     }_Elite_PV.docx`,

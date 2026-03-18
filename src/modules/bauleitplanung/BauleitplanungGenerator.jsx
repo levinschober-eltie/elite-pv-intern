@@ -18,13 +18,22 @@ import ResultBox, { ResultGrid, ResultCell } from "../../components/ResultBox";
 import DetailRow from "../../components/DetailRow";
 import ClauseEditor from "../../components/ClauseEditor";
 import WarningBanner from "../../components/WarningBanner";
+import { useToast } from "../../components/Toast";
+import ProjectSelector from "../../components/ProjectSelector";
+import SignaturePad from "../../components/SignaturePad";
+import { addVertragToProjekt } from "../../modules/projekte/projektStore";
 
 // ============================================================
 // MAIN GENERATOR
 // ============================================================
 export default function BauleitplanungGenerator() {
+  const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const [selectedProjekt, setSelectedProjekt] = useState(null);
+  const [signaturGemeinde, setSignaturGemeinde] = useState({ name: "", date: "", data: null });
+  const [signaturVorhabentraeger, setSignaturVorhabentraeger] = useState({ name: "Elite PV GmbH", date: "", data: null });
 
   // Vertragstyp
   const [vertragstyp, setVertragstyp] = useState("durchfuehrung");
@@ -93,6 +102,14 @@ export default function BauleitplanungGenerator() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleProjektSelect = (projekt) => {
+    setSelectedProjekt(projekt);
+    if (projekt) {
+      if (projekt.gemeindeName) setFormData(prev => ({ ...prev, gemeindeName: projekt.gemeindeName }));
+      if (projekt.projektName) setFormData(prev => ({ ...prev, projektName: projekt.projektName }));
+    }
+  };
+
   // Berechnungen
   const leistung = parseFloat(formData.leistungKwp) || 0;
   const buergschaftProKwp = parseFloat(formData.buergschaftProKwp) || 6;
@@ -122,7 +139,7 @@ export default function BauleitplanungGenerator() {
 
   const exportGesperrt = !formData.gemeindeName || !formData.projektName || leistung === 0;
 
-  const tabNamen = ["Vertragstyp & Gemeinde", "Projekt & Anlage", "Konditionen", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Vertragstyp & Gemeinde", "Projekt & Anlage", "Konditionen", "Ergebnis", "Vertrag", "Unterschriften"];
 
   // Aktive Klauseln
   const aktiveKlauseln =
@@ -139,17 +156,37 @@ export default function BauleitplanungGenerator() {
   const handleDocxExport = async () => {
     setIsGenerating(true);
     try {
+      const exportFormData = {
+        ...formData,
+        signatureImages: {
+          signatureImageA: signaturGemeinde.data,
+          signatureImageB: signaturVorhabentraeger.data,
+        },
+      };
+      let dateiname;
       if (vertragstyp === "durchfuehrung") {
-        await generateDurchfuehrungsvertragDocx(formData, aktiveKlauseln);
+        await generateDurchfuehrungsvertragDocx(exportFormData, aktiveKlauseln);
+        dateiname = "Durchfuehrungsvertrag";
       } else if (vertragstyp === "kommunal") {
-        await generateKommunalbeteiligungDocx(formData, aktiveKlauseln);
+        await generateKommunalbeteiligungDocx(exportFormData, aktiveKlauseln);
+        dateiname = "Kommunalbeteiligung";
       } else {
-        await generateAusgleichsvertragDocx(formData, aktiveKlauseln);
+        await generateAusgleichsvertragDocx(exportFormData, aktiveKlauseln);
+        dateiname = "Ausgleichsvertrag";
       }
+      if (selectedProjekt?.id) {
+        addVertragToProjekt(selectedProjekt.id, {
+          typ: "Bauleitplanung",
+          datum: new Date().toISOString(),
+          dateiname: dateiname + ".docx",
+        });
+      }
+      showToast("DOCX erfolgreich erstellt!", "success");
     } catch (error) {
-      alert("DOCX-Fehler: " + error.message);
+      showToast("DOCX-Fehler: " + error.message, "error");
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   // Vertragstyp-Karte Helper
@@ -194,6 +231,13 @@ export default function BauleitplanungGenerator() {
       {/* ============================================================ */}
       {activeTab === 0 && (
         <>
+          <Section title="Projekt verknüpfen" icon="📂">
+            <ProjectSelector
+              onSelect={handleProjektSelect}
+              selectedProjektId={selectedProjekt?.id}
+            />
+          </Section>
+
           <Section title="Vertragstyp" icon="📑">
             <p style={{ fontSize: 12, color: COLORS.mid, margin: "0 0 10px" }}>
               Wähle den Vertragstyp:
@@ -802,6 +846,49 @@ export default function BauleitplanungGenerator() {
             </button>
           </div>
         </>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 5: Unterschriften */}
+      {/* ============================================================ */}
+      {activeTab === 5 && (
+        <Section title="Unterschriften" icon="✍️">
+          <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14 }}>
+            Optional: Digitale Unterschriften für den Vertrag
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <SignaturePad
+              label="Unterschrift Gemeinde"
+              name={signaturGemeinde.name}
+              onNameChange={(v) => setSignaturGemeinde(prev => ({ ...prev, name: v }))}
+              date={signaturGemeinde.date}
+              onDateChange={(v) => setSignaturGemeinde(prev => ({ ...prev, date: v }))}
+              signatureData={signaturGemeinde.data}
+              onSignatureChange={(v) => setSignaturGemeinde(prev => ({ ...prev, data: v }))}
+            />
+            <SignaturePad
+              label="Unterschrift Vorhabenträger"
+              name={signaturVorhabentraeger.name}
+              onNameChange={(v) => setSignaturVorhabentraeger(prev => ({ ...prev, name: v }))}
+              date={signaturVorhabentraeger.date}
+              onDateChange={(v) => setSignaturVorhabentraeger(prev => ({ ...prev, date: v }))}
+              signatureData={signaturVorhabentraeger.data}
+              onSignatureChange={(v) => setSignaturVorhabentraeger(prev => ({ ...prev, data: v }))}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(4)}>
+              ← Vertrag
+            </button>
+            <button
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
+              onClick={handleDocxExport}
+              disabled={isGenerating || exportGesperrt}
+            >
+              {isGenerating ? "Wird erstellt…" : "📄 Vertrag als DOCX"}
+            </button>
+          </div>
+        </Section>
       )}
     </div>
   );

@@ -4,6 +4,14 @@ import { COLORS, styles } from "../../theme";
 
 const MODULE = [
   {
+    key: "projekte",
+    icon: "📂",
+    label: "Projekte",
+    status: "Aktiv",
+    color: "#00897B",
+    path: "/projekte",
+  },
+  {
     key: "wartung",
     icon: "📋",
     label: "Wartung",

@@ -17,9 +17,21 @@ import {
   PageBreak,
   TabStopType,
   TabStopPosition,
+  ImageRun,
 } from "docx";
 import { saveAs } from "file-saver";
 import { formatDatum } from "./formatters";
+
+// ============================================================
+// VERTRAGSNUMMER GENERIEREN
+// ============================================================
+export function generiereVertragsnummer(prefix = "EPV") {
+  const datum = new Date();
+  const y = datum.getFullYear().toString().slice(-2);
+  const m = String(datum.getMonth() + 1).padStart(2, "0");
+  const id = crypto.randomUUID().slice(0, 8).toUpperCase();
+  return `${prefix}-${y}${m}-${id}`;
+}
 
 // ============================================================
 // ELITE PV DOCX CONSTANTS
@@ -31,8 +43,9 @@ const ELITE_MID = "888888";
 
 const PAGE_WIDTH_DXA = 11906; // A4
 const PAGE_HEIGHT_DXA = 16838;
+const MARGIN_LEFT_DXA = 1700; // ~3.0 cm (Platz für Lochung)
 const MARGIN_DXA = 1440; // 1 inch = ~2.54cm
-const CONTENT_WIDTH_DXA = PAGE_WIDTH_DXA - 2 * MARGIN_DXA; // 9026
+const CONTENT_WIDTH_DXA = PAGE_WIDTH_DXA - MARGIN_LEFT_DXA - MARGIN_DXA; // ~8766
 
 const BORDER_LIGHT = {
   style: BorderStyle.SINGLE,
@@ -145,6 +158,8 @@ export function createDocxTable(headers, rows, options = {}) {
 
   // Header row
   const headerRow = new TableRow({
+    tableHeader: true,
+    cantSplit: true,
     children: headers.map(
       (h, i) =>
         new TableCell({
@@ -365,68 +380,152 @@ export function createHighlightBox(label, mainText, subText) {
 // ============================================================
 // SIGNATURE BLOCK
 // ============================================================
-export function createDocxSignatureBlock(partyA, partyB) {
+export function createDocxSignatureBlock(partyA, partyB, options = {}) {
+  const halfWidth = Math.floor(CONTENT_WIDTH_DXA / 2) - 100;
+  const noBorders = {
+    top: { style: BorderStyle.NONE },
+    bottom: { style: BorderStyle.NONE },
+    left: { style: BorderStyle.NONE },
+    right: { style: BorderStyle.NONE },
+  };
+  const cellMargins = { top: 40, bottom: 40, left: 60, right: 60 };
+
+  // Helper: convert base64 data URL to Uint8Array
+  function base64ToUint8Array(dataUrl) {
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  // Optional signature image rows (inserted before the signature line)
+  const signatureImageRows = [];
+  if (options.signatureImageA || options.signatureImageB) {
+    const leftChildren = options.signatureImageA
+      ? [new Paragraph({
+          children: [
+            new ImageRun({
+              data: base64ToUint8Array(options.signatureImageA),
+              transformation: { width: 200, height: 80 },
+            }),
+          ],
+        })]
+      : [new Paragraph({ children: [] })];
+
+    const rightChildren = options.signatureImageB
+      ? [new Paragraph({
+          children: [
+            new ImageRun({
+              data: base64ToUint8Array(options.signatureImageB),
+              transformation: { width: 200, height: 80 },
+            }),
+          ],
+        })]
+      : [new Paragraph({ children: [] })];
+
+    signatureImageRows.push(
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: halfWidth, type: WidthType.DXA },
+            borders: noBorders,
+            margins: cellMargins,
+            children: leftChildren,
+          }),
+          new TableCell({
+            width: { size: 200, type: WidthType.DXA },
+            borders: noBorders,
+            margins: cellMargins,
+            children: [new Paragraph({ children: [] })],
+          }),
+          new TableCell({
+            width: { size: halfWidth, type: WidthType.DXA },
+            borders: noBorders,
+            margins: cellMargins,
+            children: rightChildren,
+          }),
+        ],
+      })
+    );
+  }
+
   return [
     new Paragraph({ spacing: { before: 600 }, children: [] }),
-    new Paragraph({
-      spacing: { after: 40 },
-      children: [
-        new TextRun({
-          text: "_".repeat(40),
-          size: 18,
-          font: "DM Sans",
-          color: ELITE_MID,
+    new Table({
+      width: { size: CONTENT_WIDTH_DXA, type: WidthType.DXA },
+      columnWidths: [halfWidth, 200, halfWidth],
+      rows: [
+        // Signature images (if provided)
+        ...signatureImageRows,
+        // Unterschrift-Linie
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: halfWidth, type: WidthType.DXA },
+              borders: { ...noBorders, bottom: { style: BorderStyle.SINGLE, size: 1, color: ELITE_MID } },
+              margins: cellMargins,
+              children: [new Paragraph({ spacing: { before: 400 }, children: [] })],
+            }),
+            new TableCell({
+              width: { size: 200, type: WidthType.DXA },
+              borders: noBorders,
+              margins: cellMargins,
+              children: [new Paragraph({ children: [] })],
+            }),
+            new TableCell({
+              width: { size: halfWidth, type: WidthType.DXA },
+              borders: { ...noBorders, bottom: { style: BorderStyle.SINGLE, size: 1, color: ELITE_MID } },
+              margins: cellMargins,
+              children: [new Paragraph({ spacing: { before: 400 }, children: [] })],
+            }),
+          ],
         }),
-        new TextRun({
-          text: "          ",
-          size: 18,
+        // Namen
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: halfWidth, type: WidthType.DXA },
+              borders: noBorders,
+              margins: cellMargins,
+              children: [new Paragraph({ children: [new TextRun({ text: partyA, size: 16, font: "DM Sans", color: ELITE_MID })] })],
+            }),
+            new TableCell({
+              width: { size: 200, type: WidthType.DXA },
+              borders: noBorders,
+              children: [new Paragraph({ children: [] })],
+            }),
+            new TableCell({
+              width: { size: halfWidth, type: WidthType.DXA },
+              borders: noBorders,
+              margins: cellMargins,
+              children: [new Paragraph({ children: [new TextRun({ text: partyB, size: 16, font: "DM Sans", color: ELITE_MID })] })],
+            }),
+          ],
         }),
-        new TextRun({
-          text: "_".repeat(40),
-          size: 18,
-          font: "DM Sans",
-          color: ELITE_MID,
-        }),
-      ],
-    }),
-    new Paragraph({
-      spacing: { after: 20 },
-      children: [
-        new TextRun({
-          text: partyA,
-          size: 16,
-          font: "DM Sans",
-          color: ELITE_MID,
-        }),
-        new TextRun({
-          text: "                                           ",
-          size: 16,
-        }),
-        new TextRun({
-          text: partyB,
-          size: 16,
-          font: "DM Sans",
-          color: ELITE_MID,
-        }),
-      ],
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "Ort, Datum",
-          size: 16,
-          font: "DM Sans",
-          color: ELITE_MID,
-        }),
-        new TextRun({
-          text: "                                                    ",
-          size: 16,
-        }),
-        new TextRun({
-          text: "Ort, Datum",
-          size: 16,
-          font: "DM Sans",
-          color: ELITE_MID,
+        // Ort, Datum
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: halfWidth, type: WidthType.DXA },
+              borders: noBorders,
+              margins: cellMargins,
+              children: [new Paragraph({ children: [new TextRun({ text: "Ort, Datum", size: 16, font: "DM Sans", color: ELITE_MID })] })],
+            }),
+            new TableCell({
+              width: { size: 200, type: WidthType.DXA },
+              borders: noBorders,
+              children: [new Paragraph({ children: [] })],
+            }),
+            new TableCell({
+              width: { size: halfWidth, type: WidthType.DXA },
+              borders: noBorders,
+              margins: cellMargins,
+              children: [new Paragraph({ children: [new TextRun({ text: "Ort, Datum", size: 16, font: "DM Sans", color: ELITE_MID })] })],
+            }),
+          ],
         }),
       ],
     }),
@@ -563,9 +662,11 @@ export function createClauseParagraphs(klauseln) {
   );
 
   for (const klausel of klauseln) {
-    // Klausel-Titel
+    // Klausel-Titel (mit keepNext damit Titel nicht ohne Text auf Seitenende steht)
     paragraphs.push(
       new Paragraph({
+        heading: HeadingLevel.HEADING_2,
+        keepNext: true,
         spacing: { before: 200, after: 60 },
         children: [
           new TextRun({
@@ -608,6 +709,7 @@ export async function generateDocx(config) {
     sections = [],
     klauseln,
     signatureParties,
+    signatureImages,
     fileName,
   } = config;
 
@@ -652,14 +754,18 @@ export async function generateDocx(config) {
     children.push(...createClauseParagraphs(klauseln));
   }
 
-  // Unterschriften
+  // Unterschriften (PageBreak davor, damit Unterschriften nie abgeschnitten werden)
   if (signatureParties) {
+    children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(
-      ...createDocxSignatureBlock(signatureParties[0], signatureParties[1])
+      ...createDocxSignatureBlock(signatureParties[0], signatureParties[1], signatureImages || {})
     );
   }
 
   const doc = new Document({
+    title: title,
+    creator: "Elite PV GmbH",
+    description: subtitle || title,
     styles: {
       default: {
         document: {
@@ -676,7 +782,7 @@ export async function generateDocx(config) {
               top: MARGIN_DXA,
               right: MARGIN_DXA,
               bottom: MARGIN_DXA,
-              left: MARGIN_DXA,
+              left: MARGIN_LEFT_DXA,
             },
           },
         },

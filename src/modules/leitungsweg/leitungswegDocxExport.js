@@ -258,6 +258,7 @@ export async function generateGemeindeVertragDocx(formData, klauseln) {
     ],
     klauseln: ersetzte,
     signatureParties: [`Gemeinde ${gemeindeName}`, "Elite PV GmbH (Betreiber)"],
+    signatureImages: formData.signatureImages,
     fileName: `Duldungsvertrag_Gemeinde_${gemeindeName.replace(/[\s,]+/g, "_")}_Elite_PV.docx`,
   });
 }
@@ -439,6 +440,7 @@ export async function generatePrivatVertragDocx(formData, klauseln) {
     ],
     klauseln: ersetzte,
     signatureParties: ["Elite PV GmbH (Berechtigte)", `${eigName} (Eigentümer)`],
+    signatureImages: formData.signatureImages,
     fileName: `Leitungsrecht_${eigName.replace(/[\s,]+/g, "_")}_Elite_PV.docx`,
   });
 }

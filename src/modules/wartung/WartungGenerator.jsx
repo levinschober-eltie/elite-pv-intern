@@ -14,6 +14,9 @@ import ClauseEditor from "../../components/ClauseEditor";
 import WarningBanner from "../../components/WarningBanner";
 import { generateWartungDocx } from "./wartungDocxExport";
 import { useToast } from "../../components/Toast";
+import ProjectSelector from "../../components/ProjectSelector";
+import SignaturePad from "../../components/SignaturePad";
+import { addVertragToProjekt } from "../../modules/projekte/projektStore";
 
 export default function WartungGenerator() {
   const showToast = useToast();
@@ -22,6 +25,10 @@ export default function WartungGenerator() {
   const [klauseln, setKlauseln] = useState(
     () => getKlauseln("wartung", DEFAULT_KLAUSELN)
   );
+
+  const [selectedProjekt, setSelectedProjekt] = useState(null);
+  const [signaturAuftraggeber, setSignaturAuftraggeber] = useState({ name: "", date: "", data: null });
+  const [signaturElitePV, setSignaturElitePV] = useState({ name: "Elite PV GmbH", date: "", data: null });
 
   const [formData, setFormData] = useState({
     // Kundendaten
@@ -54,11 +61,22 @@ export default function WartungGenerator() {
     zahlungsweise: "monatlich",
   });
 
+  const handleProjektSelect = (projekt) => {
+    setSelectedProjekt(projekt);
+    if (projekt) {
+      if (projekt.projektname) setFormData(prev => ({ ...prev, kundenname: projekt.projektname }));
+    }
+  };
+
   // Setter mit Validierung
   const updateField = (key) => (value) => {
     const validierteKeys = Object.keys(VALIDIERUNG);
-    if (key === "rabattProzent" || key === "preisanpassungProzent") {
-      setFormData((prev) => ({ ...prev, [key]: value }));
+    if (key === "rabattProzent") {
+      const clamped = Math.max(0, Math.min(100, Number(value) || 0));
+      setFormData((prev) => ({ ...prev, [key]: clamped }));
+    } else if (key === "preisanpassungProzent") {
+      const clamped = Math.max(0, Math.min(10, Number(value) || 0));
+      setFormData((prev) => ({ ...prev, [key]: clamped }));
     } else if (validierteKeys.includes(key)) {
       setFormData((prev) => ({ ...prev, [key]: clampValue(key, value) }));
     } else {
@@ -78,17 +96,34 @@ export default function WartungGenerator() {
   const ergebnis = berechneWartung(kalkDaten);
   const warnungen = getWarnung(formData);
 
-  const tabNamen = ["Kunde", "Anlage", "Optionen", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Kunde", "Anlage", "Optionen", "Ergebnis", "Vertrag", "Unterschriften"];
 
   // DOCX-Export
   const handleDocxExport = async (mitVertrag) => {
     setIsGenerating(true);
     try {
-      await generateWartungDocx(formData, ergebnis, mitVertrag ? klauseln : null);
+      const exportFormData = {
+        ...formData,
+        signatureImages: {
+          signatureImageA: signaturAuftraggeber.data,
+          signatureImageB: signaturElitePV.data,
+        },
+      };
+      await generateWartungDocx(exportFormData, ergebnis, mitVertrag ? klauseln : null);
+      const dateiname = mitVertrag ? "Wartungsvertrag" : "Preisblatt_Wartung";
+      if (selectedProjekt?.id) {
+        addVertragToProjekt(selectedProjekt.id, {
+          typ: "Wartung",
+          datum: new Date().toISOString(),
+          dateiname: dateiname + ".docx",
+        });
+      }
+      showToast("DOCX erfolgreich erstellt!", "success");
     } catch (error) {
       showToast("DOCX-Fehler: " + error.message, "error");
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   return (
@@ -105,6 +140,10 @@ export default function WartungGenerator() {
       {/* TAB 0: Kundendaten */}
       {activeTab === 0 && (
         <Section title="Kundendaten">
+          <ProjectSelector
+            onSelect={handleProjektSelect}
+            selectedProjektId={selectedProjekt?.id}
+          />
           <div style={styles.grid2}>
             <TextInput
               label="Kundenname *"
@@ -451,6 +490,47 @@ export default function WartungGenerator() {
             </button>
           </div>
         </>
+      )}
+
+      {/* TAB 5: Unterschriften */}
+      {activeTab === 5 && (
+        <Section title="Unterschriften" icon="✍️">
+          <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14 }}>
+            Optional: Digitale Unterschriften für den Vertrag
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <SignaturePad
+              label="Unterschrift Auftraggeber"
+              name={signaturAuftraggeber.name}
+              onNameChange={(v) => setSignaturAuftraggeber(prev => ({ ...prev, name: v }))}
+              date={signaturAuftraggeber.date}
+              onDateChange={(v) => setSignaturAuftraggeber(prev => ({ ...prev, date: v }))}
+              signatureData={signaturAuftraggeber.data}
+              onSignatureChange={(v) => setSignaturAuftraggeber(prev => ({ ...prev, data: v }))}
+            />
+            <SignaturePad
+              label="Unterschrift Elite PV GmbH"
+              name={signaturElitePV.name}
+              onNameChange={(v) => setSignaturElitePV(prev => ({ ...prev, name: v }))}
+              date={signaturElitePV.date}
+              onDateChange={(v) => setSignaturElitePV(prev => ({ ...prev, date: v }))}
+              signatureData={signaturElitePV.data}
+              onSignatureChange={(v) => setSignaturElitePV(prev => ({ ...prev, data: v }))}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(4)}>
+              ← Vertrag
+            </button>
+            <button
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px" }}
+              onClick={() => handleDocxExport(true)}
+              disabled={isGenerating}
+            >
+              {isGenerating ? "Wird erstellt\u2026" : "📄 Vertrag als DOCX"}
+            </button>
+          </div>
+        </Section>
       )}
     </div>
   );

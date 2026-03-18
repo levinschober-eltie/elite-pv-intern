@@ -35,6 +35,9 @@ import ClauseEditor from "../../components/ClauseEditor";
 import OwnerFields, { createDefaultEigentuemer } from "../../components/OwnerFields";
 import LandRegisterFields, { createDefaultGrundbuch } from "../../components/LandRegisterFields";
 import WarningBanner from "../../components/WarningBanner";
+import ProjectSelector from "../../components/ProjectSelector";
+import SignaturePad from "../../components/SignaturePad";
+import { addVertragToProjekt } from "../../modules/projekte/projektStore";
 
 // ============================================================
 // MODELL-KARTE (A–D)
@@ -110,6 +113,10 @@ export default function FreiflaecheGenerator() {
   const [klauseln, setKlauseln] = useState(
     () => getKlauseln("freiflaeche", FREIFLAECHE_KLAUSELN)
   );
+
+  const [selectedProjekt, setSelectedProjekt] = useState(null);
+  const [signaturVerpachter, setSignaturVerpachter] = useState({ name: "", date: "", data: null });
+  const [signaturPachter, setSignaturPachter] = useState({ name: "Elite PV GmbH", date: "", data: null });
 
   const [eigentuemer, setEigentuemer] = useState(createDefaultEigentuemer());
   const [grundbuch, setGrundbuch] = useState(createDefaultGrundbuch());
@@ -188,6 +195,14 @@ export default function FreiflaecheGenerator() {
     setBewertung((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleProjektSelect = (projekt) => {
+    setSelectedProjekt(projekt);
+    if (projekt) {
+      if (projekt.eigentuemer) setEigentuemer(projekt.eigentuemer);
+      if (projekt.grundbuch) setGrundbuch(projekt.grundbuch);
+    }
+  };
+
   const update = (key) => (value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
     // Pachtfläche auch in Bewertung synchronisieren
@@ -255,7 +270,7 @@ export default function FreiflaecheGenerator() {
   const alleMeldungen = [...fehler.map((f) => "❌ " + f), ...warnungen];
   const exportGesperrt = fehler.length > 0;
 
-  const tabNamen = ["Eigentümer", "Grundstück", "Fläche & Technik", "Bewertung", "Pachtmodell", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Eigentümer", "Grundstück", "Fläche & Technik", "Bewertung", "Pachtmodell", "Ergebnis", "Vertrag", "Unterschriften"];
 
   // DOCX-Export
   const handleDocxExport = async (typ) => {
@@ -265,16 +280,32 @@ export default function FreiflaecheGenerator() {
         ...formData,
         eigentuemer,
         grundbuch,
+        signatureImages: {
+          signatureImageA: signaturVerpachter.data,
+          signatureImageB: signaturPachter.data,
+        },
       };
+      let dateiname;
       if (typ === "preisblatt") {
         await generateFreiflaechePreisblattDocx(exportData, ergebnis);
+        dateiname = "Preisblatt_Freiflaeche";
       } else {
         await generateFreiflaecheVertragDocx(exportData, ergebnis, klauseln);
+        dateiname = "Gestattungsvertrag_Freiflaeche";
       }
+      if (selectedProjekt?.id) {
+        addVertragToProjekt(selectedProjekt.id, {
+          typ: "Freifläche",
+          datum: new Date().toISOString(),
+          dateiname: dateiname + ".docx",
+        });
+      }
+      showToast("DOCX erfolgreich erstellt!", "success");
     } catch (error) {
       showToast("DOCX-Fehler: " + error.message, "error");
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   return (
@@ -288,6 +319,10 @@ export default function FreiflaecheGenerator() {
       {/* ============================================================ */}
       {activeTab === 0 && (
         <Section title="Eigentümer / Grundstückseigentümer" icon="👤">
+          <ProjectSelector
+            onSelect={handleProjektSelect}
+            selectedProjektId={selectedProjekt?.id}
+          />
           <OwnerFields eigentuemer={eigentuemer} onChange={setEigentuemer} />
           <NavButtons onNext={() => setActiveTab(1)} />
         </Section>
@@ -1552,6 +1587,49 @@ export default function FreiflaecheGenerator() {
             </button>
           </div>
         </>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 7: Unterschriften */}
+      {/* ============================================================ */}
+      {activeTab === 7 && (
+        <Section title="Unterschriften" icon="✍️">
+          <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14 }}>
+            Optional: Digitale Unterschriften für den Vertrag
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <SignaturePad
+              label="Unterschrift Verpächter"
+              name={signaturVerpachter.name}
+              onNameChange={(v) => setSignaturVerpachter(prev => ({ ...prev, name: v }))}
+              date={signaturVerpachter.date}
+              onDateChange={(v) => setSignaturVerpachter(prev => ({ ...prev, date: v }))}
+              signatureData={signaturVerpachter.data}
+              onSignatureChange={(v) => setSignaturVerpachter(prev => ({ ...prev, data: v }))}
+            />
+            <SignaturePad
+              label="Unterschrift Pächter"
+              name={signaturPachter.name}
+              onNameChange={(v) => setSignaturPachter(prev => ({ ...prev, name: v }))}
+              date={signaturPachter.date}
+              onDateChange={(v) => setSignaturPachter(prev => ({ ...prev, date: v }))}
+              signatureData={signaturPachter.data}
+              onSignatureChange={(v) => setSignaturPachter(prev => ({ ...prev, data: v }))}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(6)}>
+              ← Vertrag
+            </button>
+            <button
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
+              onClick={() => handleDocxExport("vertrag")}
+              disabled={isGenerating || exportGesperrt}
+            >
+              {isGenerating ? "Wird erstellt…" : "📄 Vertrag als DOCX"}
+            </button>
+          </div>
+        </Section>
       )}
     </div>
   );

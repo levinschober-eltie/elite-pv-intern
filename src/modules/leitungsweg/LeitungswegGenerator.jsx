@@ -18,6 +18,10 @@ import DetailRow from "../../components/DetailRow";
 import ClauseEditor from "../../components/ClauseEditor";
 import OwnerFields, { createDefaultEigentuemer } from "../../components/OwnerFields";
 import WarningBanner from "../../components/WarningBanner";
+import { useToast } from "../../components/Toast";
+import ProjectSelector from "../../components/ProjectSelector";
+import SignaturePad from "../../components/SignaturePad";
+import { addVertragToProjekt } from "../../modules/projekte/projektStore";
 
 // ============================================================
 // FLURSTÜCK-EDITOR (inline)
@@ -187,8 +191,13 @@ const defaultFlurstueck = () => ({
 // MAIN GENERATOR
 // ============================================================
 export default function LeitungswegGenerator() {
+  const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const [selectedProjekt, setSelectedProjekt] = useState(null);
+  const [signaturParteiA, setSignaturParteiA] = useState({ name: "", date: "", data: null });
+  const [signaturParteiB, setSignaturParteiB] = useState({ name: "Elite PV GmbH", date: "", data: null });
 
   // Vertragstyp: "gemeinde" oder "privat"
   const [vertragstyp, setVertragstyp] = useState("privat");
@@ -237,6 +246,13 @@ export default function LeitungswegGenerator() {
     zusatzvereinbarungen: "",
   });
 
+  const handleProjektSelect = (projekt) => {
+    setSelectedProjekt(projekt);
+    if (projekt) {
+      if (projekt.eigentuemer) setEigentuemer(projekt.eigentuemer);
+    }
+  };
+
   const update = (key) => (value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -267,7 +283,7 @@ export default function LeitungswegGenerator() {
       : (eigentuemer.partner || []).some((p) => p.name);
   const exportGesperrt = !vertragspartnerOk || trassenlaenge === 0;
 
-  const tabNamen = ["Vertragspartner", "Grundstück & Trasse", "Entschädigung", "Ergebnis", "Vertrag"];
+  const tabNamen = ["Vertragspartner", "Grundstück & Trasse", "Entschädigung", "Ergebnis", "Vertrag", "Unterschriften"];
 
   // Aktive Klauseln
   const aktiveKlauseln = vertragstyp === "gemeinde" ? gemeindeKlauseln : privatKlauseln;
@@ -282,16 +298,32 @@ export default function LeitungswegGenerator() {
         ...formData,
         eigentuemer,
         flurstuecke,
+        signatureImages: {
+          signatureImageA: signaturParteiA.data,
+          signatureImageB: signaturParteiB.data,
+        },
       };
+      let dateiname;
       if (vertragstyp === "gemeinde") {
         await generateGemeindeVertragDocx(exportData, aktiveKlauseln);
+        dateiname = "Duldungsvertrag_Gemeinde";
       } else {
         await generatePrivatVertragDocx(exportData, aktiveKlauseln);
+        dateiname = "Leitungsrecht_Privat";
       }
+      if (selectedProjekt?.id) {
+        addVertragToProjekt(selectedProjekt.id, {
+          typ: "Leitungsweg",
+          datum: new Date().toISOString(),
+          dateiname: dateiname + ".docx",
+        });
+      }
+      showToast("DOCX erfolgreich erstellt!", "success");
     } catch (error) {
-      alert("DOCX-Fehler: " + error.message);
+      showToast("DOCX-Fehler: " + error.message, "error");
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   return (
@@ -305,6 +337,13 @@ export default function LeitungswegGenerator() {
       {/* ============================================================ */}
       {activeTab === 0 && (
         <>
+          <Section title="Projekt verknüpfen" icon="📂">
+            <ProjectSelector
+              onSelect={handleProjektSelect}
+              selectedProjektId={selectedProjekt?.id}
+            />
+          </Section>
+
           {/* Vertragstyp-Auswahl */}
           <Section title="Vertragstyp" icon="📑">
             <p style={{ fontSize: 12, color: COLORS.mid, margin: "0 0 10px" }}>
@@ -849,6 +888,49 @@ export default function LeitungswegGenerator() {
             </button>
           </div>
         </>
+      )}
+
+      {/* ============================================================ */}
+      {/* TAB 5: Unterschriften */}
+      {/* ============================================================ */}
+      {activeTab === 5 && (
+        <Section title="Unterschriften" icon="✍️">
+          <p style={{ fontSize: 12, color: COLORS.mid, marginBottom: 14 }}>
+            Optional: Digitale Unterschriften für den Vertrag
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <SignaturePad
+              label={vertragstyp === "gemeinde" ? "Unterschrift Gemeinde" : "Unterschrift Eigentümer"}
+              name={signaturParteiA.name}
+              onNameChange={(v) => setSignaturParteiA(prev => ({ ...prev, name: v }))}
+              date={signaturParteiA.date}
+              onDateChange={(v) => setSignaturParteiA(prev => ({ ...prev, date: v }))}
+              signatureData={signaturParteiA.data}
+              onSignatureChange={(v) => setSignaturParteiA(prev => ({ ...prev, data: v }))}
+            />
+            <SignaturePad
+              label="Unterschrift Betreiber"
+              name={signaturParteiB.name}
+              onNameChange={(v) => setSignaturParteiB(prev => ({ ...prev, name: v }))}
+              date={signaturParteiB.date}
+              onDateChange={(v) => setSignaturParteiB(prev => ({ ...prev, date: v }))}
+              signatureData={signaturParteiB.data}
+              onSignatureChange={(v) => setSignaturParteiB(prev => ({ ...prev, data: v }))}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+            <button style={styles.btnOutline} onClick={() => setActiveTab(4)}>
+              ← Vertrag
+            </button>
+            <button
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
+              onClick={handleDocxExport}
+              disabled={isGenerating || exportGesperrt}
+            >
+              {isGenerating ? "Wird erstellt…" : "📄 Vertrag als DOCX"}
+            </button>
+          </div>
+        </Section>
       )}
     </div>
   );
