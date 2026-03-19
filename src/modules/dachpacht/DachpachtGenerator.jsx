@@ -737,7 +737,6 @@ export default function DachpachtGenerator() {
               klauseln={klauseln}
               setKlauseln={setKlauseln}
               defaultKlauseln={DACHPACHT_KLAUSELN}
-              storageKey="dachpacht"
             />
           </Section>
 

@@ -1,5 +1,6 @@
 import {
   generateDocx,
+  generiereVertragsnummer,
   createDocxTable,
   createSectionHeading,
   createKeyValueTable,
@@ -8,15 +9,6 @@ import {
 import { formatEuro, formatDatum, formatZahl } from "../../lib/formatters";
 import { Paragraph, TextRun, PageBreak } from "docx";
 
-// ============================================================
-// Vertragsnummer: EPV-BESS-YYYY-NNN
-// ============================================================
-function generiereVertragsnummer() {
-  const jetzt = new Date();
-  const jahr = jetzt.getFullYear();
-  const nr = String(Math.floor(Math.random() * 900) + 100);
-  return `EPV-BESS-${jahr}-${nr}`;
-}
 
 // ============================================================
 // Platzhalter ersetzen
@@ -97,7 +89,7 @@ function buildDaten(formData, ergebnis) {
     vorhalteProzent: String(formData.vorhalteProzent || 50),
     rueckbauBetrag: formatEuro(ergebnis.rueckbau.buergschaftBetrag),
     laufzeitJahre: String(ergebnis.laufzeitJahre || 20),
-    vertragsnummer: generiereVertragsnummer(),
+    vertragsnummer: generiereVertragsnummer("EPV-BESS"),
     vertragsdatum: formatDatum(new Date()),
     eigentuemerIban: formData.eigentuemerIban || "________________________",
     eigentuemerBic: formData.eigentuemerBic || "____________",

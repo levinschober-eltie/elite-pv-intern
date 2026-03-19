@@ -831,7 +831,6 @@ export default function BauleitplanungGenerator() {
               klauseln={aktiveKlauseln}
               setKlauseln={setAktiveKlauseln}
               defaultKlauseln={defaultKlauseln}
-              storageKey={vertragstyp === "durchfuehrung" ? "bauleitplanung_df" : vertragstyp === "kommunal" ? "bauleitplanung_kb" : "bauleitplanung_ag"}
             />
           </Section>
 

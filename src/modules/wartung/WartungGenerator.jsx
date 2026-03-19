@@ -506,7 +506,6 @@ export default function WartungGenerator() {
               klauseln={klauseln}
               setKlauseln={setKlauseln}
               defaultKlauseln={DEFAULT_KLAUSELN}
-              storageKey="wartung"
             />
           </Section>
 

@@ -1,5 +1,6 @@
 import {
   generateDocx,
+  generiereVertragsnummer,
   createDocxTable,
   createSectionHeading,
   createKeyValueTable,
@@ -8,15 +9,6 @@ import {
 import { formatEuro, formatDatum, formatZahl } from "../../lib/formatters";
 import { Paragraph, TextRun, PageBreak } from "docx";
 
-// ============================================================
-// Vertragsnummer: EPV-FF-YYYY-NNN
-// ============================================================
-function generiereVertragsnummer() {
-  const jetzt = new Date();
-  const jahr = jetzt.getFullYear();
-  const nr = String(Math.floor(Math.random() * 900) + 100);
-  return `EPV-FF-${jahr}-${nr}`;
-}
 
 // ============================================================
 // Platzhalter ersetzen
@@ -46,7 +38,6 @@ function ersetzePlatzhalter(text, daten) {
     "{EIGENTUEMER_IBAN}": daten.eigentuemerIban || "________________________",
     "{EIGENTUEMER_BIC}": daten.eigentuemerBic || "____________",
     "{ZUSATZVEREINBARUNGEN}": daten.zusatzvereinbarungen || "(keine)",
-    "{AGRI_PV_KLAUSEL}": daten.agriPvKlausel || "",
   };
 
   let result = text;
@@ -107,7 +98,7 @@ function buildDaten(formData, ergebnis) {
     wertsicherung: String(formData.wertsicherungProzent || 10),
     rueckbauSatz: String(formData.rueckbauSatzKw || "15,00").replace(".", ","),
     laufzeitJahre: String(ergebnis.laufzeitJahre || 20),
-    vertragsnummer: generiereVertragsnummer(),
+    vertragsnummer: generiereVertragsnummer("EPV-FF"),
     vertragsdatum: formatDatum(new Date()),
     vertretenDurch: eig.vertretenDurch
       ? `vertreten durch ${eig.vertretenDurch}`

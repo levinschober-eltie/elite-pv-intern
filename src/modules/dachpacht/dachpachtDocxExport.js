@@ -1,5 +1,6 @@
 import {
   generateDocx,
+  generiereVertragsnummer,
   createDocxTable,
   createSectionHeading,
   createKeyValueTable,
@@ -8,15 +9,6 @@ import {
 import { formatEuro, formatDatum, zahlInWort } from "../../lib/formatters";
 import { Paragraph, TextRun, PageBreak } from "docx";
 
-// ============================================================
-// Vertragsnummer auto-generieren: EPV-DP-YYYY-NNN
-// ============================================================
-function generiereVertragsnummer() {
-  const jetzt = new Date();
-  const jahr = jetzt.getFullYear();
-  const nr = String(Math.floor(Math.random() * 900) + 100);
-  return `EPV-DP-${jahr}-${nr}`;
-}
 
 // ============================================================
 // Platzhalter im Klauseltext ersetzen
@@ -120,7 +112,7 @@ function buildEigentuemerDaten(formData, ergebnis, gewaehltes) {
     pachtzinsWort,
     laufzeitJahre: String(ergebnis.laufzeitJahre || 20),
     preisanpassung,
-    vertragsnummer: generiereVertragsnummer(),
+    vertragsnummer: generiereVertragsnummer("EPV-DP"),
     standDatum: formatDatum(new Date()),
     vertretenDurch,
     batteriespeicherKwh: "(noch nicht bekannt)",

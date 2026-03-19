@@ -664,7 +664,6 @@ export default function BESSGenerator() {
               klauseln={klauseln}
               setKlauseln={setKlauseln}
               defaultKlauseln={BESS_KLAUSELN}
-              storageKey="bess"
             />
           </Section>
 

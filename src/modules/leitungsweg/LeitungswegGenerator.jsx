@@ -858,7 +858,6 @@ export default function LeitungswegGenerator() {
               klauseln={aktiveKlauseln}
               setKlauseln={setAktiveKlauseln}
               defaultKlauseln={defaultKlauseln}
-              storageKey={vertragstyp === "gemeinde" ? "leitungsweg_gemeinde" : "leitungsweg_privat"}
             />
           </Section>
 
