@@ -398,9 +398,9 @@ export async function generateFreiflaecheVertragDocx(formData, ergebnis, klausel
   sections.push({
     type: "keyValue",
     entries: [
-      ["Vorhaltevergütung", `${formatEuro(ergebnis.vorhalteverguetung.betragJahr)} / Jahr`],
-      ["Speichervergütung", ergebnis.speicher.speicherflaecheM2 > 0 ? `${formatEuro(ergebnis.speicher.verguetungJahr)} / Jahr` : "–"],
-      ["Rückbaubürgschaft", `${formatEuro(ergebnis.rueckbau.buergschaftBetrag)}`],
+      ["Vorhaltevergütung", `${formatEuro(ergebnis.vorhalteverguetung?.betragJahr || 0)} / Jahr`],
+      ["Speichervergütung", (ergebnis.speicher?.speicherflaecheM2 || 0) > 0 ? `${formatEuro(ergebnis.speicher.verguetungJahr)} / Jahr` : "–"],
+      ["Rückbaubürgschaft", `${formatEuro(ergebnis.rueckbau?.buergschaftBetrag || 0)}`],
     ],
   });
   sections.push({ type: "spacing", size: 200 });
