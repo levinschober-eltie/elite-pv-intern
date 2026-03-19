@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import { DURCHFUEHRUNG_KLAUSELN, KOMMUNAL_KLAUSELN, AUSGLEICH_KLAUSELN } from "./bauleitplanungClauses";
+import { getKlauseln } from "../../lib/klauselStore";
 import {
   generateDurchfuehrungsvertragDocx,
   generateKommunalbeteiligungDocx,
@@ -40,13 +41,13 @@ export default function BauleitplanungGenerator() {
 
   // Klauseln
   const [dfKlauseln, setDfKlauseln] = useState(
-    DURCHFUEHRUNG_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("bauleitplanung_df", DURCHFUEHRUNG_KLAUSELN)
   );
   const [kbKlauseln, setKbKlauseln] = useState(
-    KOMMUNAL_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("bauleitplanung_kb", KOMMUNAL_KLAUSELN)
   );
   const [agKlauseln, setAgKlauseln] = useState(
-    AUSGLEICH_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("bauleitplanung_ag", AUSGLEICH_KLAUSELN)
   );
 
   // Formulardaten
@@ -105,8 +106,8 @@ export default function BauleitplanungGenerator() {
   const handleProjektSelect = (projekt) => {
     setSelectedProjekt(projekt);
     if (projekt) {
-      if (projekt.gemeindeName) setFormData(prev => ({ ...prev, gemeindeName: projekt.gemeindeName }));
-      if (projekt.projektName) setFormData(prev => ({ ...prev, projektName: projekt.projektName }));
+      if (projekt.standort) setFormData(prev => ({ ...prev, gemeindeName: projekt.standort }));
+      if (projekt.projektname) setFormData(prev => ({ ...prev, projektName: projekt.projektname }));
     }
   };
 

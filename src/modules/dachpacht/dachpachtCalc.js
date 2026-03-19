@@ -30,7 +30,7 @@ export const GEBAEUDE_TYPEN = ["Wohngebäude", "Gewerbe", "Industrie", "Landwirt
 export const AUSRICHTUNGEN = ["Süd", "Süd-Ost", "Süd-West", "Ost", "West", "Nord"];
 
 // kWp aus Fläche berechnen
-export function berechneKwpAusFleache(nutzbarM2, dachtyp) {
+export function berechneKwpAusFlaeche(nutzbarM2, dachtyp) {
   const faktor = DACHTYP_FAKTOREN[dachtyp] || 8;
   return nutzbarM2 / faktor;
 }
@@ -154,7 +154,7 @@ function berechneModell3(params) {
 export function berechneDachpacht(formData) {
   const nutzbar = parseFloat(formData.nutzbareDachflaeche) || 0;
   const dachtyp = formData.dachtyp || "Satteldach Süd";
-  const kwpAusFleache = berechneKwpAusFleache(nutzbar, dachtyp);
+  const kwpAusFleache = berechneKwpAusFlaeche(nutzbar, dachtyp);
   const leistungKwp = parseFloat(formData.leistungKwp) || kwpAusFleache;
   const laufzeitJahre = parseInt(formData.laufzeitJahre) || 20;
 

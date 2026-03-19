@@ -123,10 +123,9 @@ function berechneModellC(params) {
 // ============================================================
 // VORHALTEVERGÜTUNG (vor Inbetriebnahme)
 // ============================================================
-export function berechneVorhalteverguetung(bessFlaecheM2 = 0, satzProM2 = 8, prozentVorhalt = 50) {
+export function berechneVorhalteverguetung(pachtzinsJahr = 0, prozentVorhalt = 50) {
   // Enerpeak §5.3: 50% des Nutzungsentgelts vor IBN
-  const vollBetrag = bessFlaecheM2 * satzProM2;
-  const betragJahr = vollBetrag * (prozentVorhalt / 100);
+  const betragJahr = pachtzinsJahr * (prozentVorhalt / 100);
   return {
     betragJahr,
     betragMonat: betragJahr / 12,
@@ -199,9 +198,11 @@ export function berechneBESS(formData) {
     laufzeitJahre,
   });
 
+  // Vorhaltevergütung basiert auf dem gewählten Modell (50% der Jahrespacht)
+  const gewaehlteModellKey = formData.gewaehlteModell || "A";
+  const gewaehlteModellErgebnis = { A: modellA, B: modellB, C: modellC }[gewaehlteModellKey] || modellA;
   const vorhalteverguetung = berechneVorhalteverguetung(
-    bessFlaecheM2,
-    parseFloat(formData.satzProM2) || 8,
+    gewaehlteModellErgebnis.pachtzinsJahr,
     parseFloat(formData.vorhalteProzent) || 50
   );
 

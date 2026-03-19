@@ -15,9 +15,10 @@ export function loadProjekte() {
 export function saveProjekte(projekte) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(projekte));
+    return true;
   } catch (e) {
     console.error("saveProjekte fehlgeschlagen:", e);
-    throw e;
+    return false;
   }
 }
 

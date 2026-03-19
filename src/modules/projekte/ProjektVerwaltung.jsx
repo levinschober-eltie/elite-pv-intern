@@ -410,7 +410,7 @@ export default function ProjektVerwaltung() {
                   )}
                 </div>
                 <span style={{ fontSize: 12, color: COLORS.mid }}>
-                  {vertrag.datum || "–"}
+                  {vertrag.datum ? formatDate(vertrag.datum) : "–"}
                 </span>
               </div>
             ))}

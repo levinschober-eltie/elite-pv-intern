@@ -56,4 +56,9 @@ export const MODUL_KEYS = {
   dachpacht: "dachpacht",
   freiflaeche: "freiflaeche",
   bess: "bess",
+  leitungsweg_gemeinde: "leitungsweg_gemeinde",
+  leitungsweg_privat: "leitungsweg_privat",
+  bauleitplanung_df: "bauleitplanung_df",
+  bauleitplanung_kb: "bauleitplanung_kb",
+  bauleitplanung_ag: "bauleitplanung_ag",
 };

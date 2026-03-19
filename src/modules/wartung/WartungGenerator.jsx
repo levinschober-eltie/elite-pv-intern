@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatProzent } from "../../lib/formatters";
 import { clampValue, getWarnung, VALIDIERUNG } from "../../lib/validators";
@@ -72,7 +72,7 @@ export default function WartungGenerator() {
   const updateField = (key) => (value) => {
     const validierteKeys = Object.keys(VALIDIERUNG);
     if (key === "rabattProzent") {
-      const clamped = Math.max(0, Math.min(100, Number(value) || 0));
+      const clamped = Math.max(0, Math.min(50, Number(value) || 0));
       setFormData((prev) => ({ ...prev, [key]: clamped }));
     } else if (key === "preisanpassungProzent") {
       const clamped = Math.max(0, Math.min(10, Number(value) || 0));
@@ -93,8 +93,38 @@ export default function WartungGenerator() {
       Math.min(0.1, (formData.preisanpassungProzent || 0) / 100)
     ),
   };
-  const ergebnis = berechneWartung(kalkDaten);
-  const warnungen = getWarnung(formData);
+  const ergebnis = useMemo(() => berechneWartung(kalkDaten), [
+    formData.leistungKwp,
+    formData.modulAnzahl,
+    formData.wechselrichterAnzahl,
+    formData.flaechenAnzahl,
+    formData.unterverteilungen,
+    formData.montageart,
+    formData.hatSpeicher,
+    formData.zugang,
+    formData.anlagenalter,
+    formData.entfernungKm,
+    formData.wartungenProJahr,
+    formData.hatMonitoring,
+    formData.hatThermografie,
+    formData.hatSLA,
+    formData.erstlaufzeitMonate,
+    formData.rabattProzent,
+    formData.preisanpassungProzent,
+    formData.zahlungsweise,
+  ]);
+  const warnungen = useMemo(() => getWarnung(formData), [formData]);
+
+  // Pflichtfeld-Fehler (rot, blockieren Export)
+  const fehler = [];
+  if (!formData.kundenname.trim()) fehler.push("Kundenname fehlt");
+  if (formData.leistungKwp === 0) fehler.push("Leistung kWp = 0");
+
+  // Alle Meldungen für Banner
+  const alleMeldungen = [...fehler.map(f => "❌ " + f), ...warnungen];
+
+  // Export möglich?
+  const exportGesperrt = fehler.length > 0;
 
   const tabNamen = ["Kunde", "Anlage", "Optionen", "Ergebnis", "Vertrag", "Unterschriften"];
 
@@ -135,7 +165,7 @@ export default function WartungGenerator() {
       />
 
       {/* Warnungen */}
-      {activeTab < 3 && <WarningBanner warnungen={warnungen} />}
+      <WarningBanner warnungen={alleMeldungen} />
 
       {/* TAB 0: Kundendaten */}
       {activeTab === 0 && (
@@ -445,9 +475,9 @@ export default function WartungGenerator() {
               ← Bearbeiten
             </button>
             <button
-              style={styles.btnPrimary}
+              style={{ ...styles.btnPrimary, opacity: exportGesperrt ? 0.5 : 1 }}
               onClick={() => handleDocxExport(false)}
-              disabled={isGenerating}
+              disabled={isGenerating || exportGesperrt}
             >
               📄 Preisblatt DOCX
             </button>
@@ -455,6 +485,12 @@ export default function WartungGenerator() {
               📝 Vertrag →
             </button>
           </div>
+
+          {exportGesperrt && (
+            <div style={{ ...styles.warnung, textAlign: "center", marginTop: 8, background: "#FFEBEE", borderColor: "#D32F2F", color: "#C62828" }}>
+              ⛔ Export nicht möglich – Pflichtdaten fehlen
+            </div>
+          )}
         </>
       )}
 
@@ -482,13 +518,19 @@ export default function WartungGenerator() {
               ← Ergebnis
             </button>
             <button
-              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px" }}
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
               onClick={() => handleDocxExport(true)}
-              disabled={isGenerating}
+              disabled={isGenerating || exportGesperrt}
             >
               {isGenerating ? "Wird erstellt\u2026" : "📄 Vertrag als DOCX"}
             </button>
           </div>
+
+          {exportGesperrt && (
+            <div style={{ ...styles.warnung, textAlign: "center", marginTop: 8, background: "#FFEBEE", borderColor: "#D32F2F", color: "#C62828" }}>
+              ⛔ Export nicht möglich – Pflichtdaten fehlen
+            </div>
+          )}
         </>
       )}
 
@@ -523,9 +565,9 @@ export default function WartungGenerator() {
               ← Vertrag
             </button>
             <button
-              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px" }}
+              style={{ ...styles.btnPrimary, fontSize: 14.5, padding: "12px 28px", opacity: exportGesperrt ? 0.5 : 1 }}
               onClick={() => handleDocxExport(true)}
-              disabled={isGenerating}
+              disabled={isGenerating || exportGesperrt}
             >
               {isGenerating ? "Wird erstellt\u2026" : "📄 Vertrag als DOCX"}
             </button>

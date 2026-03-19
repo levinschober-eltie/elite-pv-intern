@@ -4,6 +4,8 @@ import { DEFAULT_KLAUSELN } from "../wartung/wartungClauses";
 import { DACHPACHT_KLAUSELN } from "../dachpacht/dachpachtClauses";
 import { FREIFLAECHE_KLAUSELN } from "../freiflaeche/freiflaecheClauses";
 import { BESS_KLAUSELN } from "../bess/bessClauses";
+import { GEMEINDE_KLAUSELN, PRIVAT_KLAUSELN } from "../leitungsweg/leitungswegClauses";
+import { DURCHFUEHRUNG_KLAUSELN, KOMMUNAL_KLAUSELN, AUSGLEICH_KLAUSELN } from "../bauleitplanung/bauleitplanungClauses";
 import { getKlauseln, setKlauseln, resetKlauseln, hatEigeneVorlagen } from "../../lib/klauselStore";
 import ClauseEditor from "../../components/ClauseEditor";
 import Section from "../../components/Section";
@@ -16,6 +18,11 @@ const MODULE = [
   { key: "dachpacht", label: "Dachpacht", icon: "\uD83C\uDFE2", defaults: DACHPACHT_KLAUSELN },
   { key: "freiflaeche", label: "Freifl\u00E4che", icon: "\uD83C\uDF3E", defaults: FREIFLAECHE_KLAUSELN },
   { key: "bess", label: "BESS", icon: "\uD83D\uDD0B", defaults: BESS_KLAUSELN },
+  { key: "leitungsweg_gemeinde", label: "Leitungsweg (Gemeinde)", icon: "\uD83D\uDEE4\uFE0F", defaults: GEMEINDE_KLAUSELN },
+  { key: "leitungsweg_privat", label: "Leitungsweg (Privat)", icon: "\uD83D\uDEE4\uFE0F", defaults: PRIVAT_KLAUSELN },
+  { key: "bauleitplanung_df", label: "Bauleitplanung (Durchf\u00FChrung)", icon: "\uD83C\uDFD7\uFE0F", defaults: DURCHFUEHRUNG_KLAUSELN },
+  { key: "bauleitplanung_kb", label: "Bauleitplanung (Kommunal)", icon: "\uD83C\uDFD7\uFE0F", defaults: KOMMUNAL_KLAUSELN },
+  { key: "bauleitplanung_ag", label: "Bauleitplanung (Ausgleich)", icon: "\uD83C\uDF3F", defaults: AUSGLEICH_KLAUSELN },
 ];
 
 function PasswordGate({ onUnlock }) {

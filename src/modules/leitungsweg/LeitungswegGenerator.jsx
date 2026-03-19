@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro } from "../../lib/formatters";
 import { GEMEINDE_KLAUSELN, PRIVAT_KLAUSELN } from "./leitungswegClauses";
+import { getKlauseln } from "../../lib/klauselStore";
 import {
   generateGemeindeVertragDocx,
   generatePrivatVertragDocx,
@@ -204,10 +205,10 @@ export default function LeitungswegGenerator() {
 
   // Klauseln je Typ
   const [gemeindeKlauseln, setGemeindeKlauseln] = useState(
-    GEMEINDE_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("leitungsweg_gemeinde", GEMEINDE_KLAUSELN)
   );
   const [privatKlauseln, setPrivatKlauseln] = useState(
-    PRIVAT_KLAUSELN.map((k) => ({ ...k }))
+    () => getKlauseln("leitungsweg_privat", PRIVAT_KLAUSELN)
   );
 
   // Eigentümer (für Privat)
