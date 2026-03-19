@@ -16,7 +16,7 @@ Flurnummer {FLURSTUECKE_GEMEINDE} gemäß der diesem Vertrag beigefügten „Anl
 
 zum Anschluss von der Anlage zur Erzeugung von erneuerbaren Energien {EE_ANLAGE_NAME} ({EE_ANLAGE_KOORDINATEN} – Standort der EE-Anlage) zum Netzverknüpfungspunkt {NVP_NAME} ({NVP_KOORDINATEN} – Lage Netzverknüpfungspunkt).
 
-Die Gemeinde ist verpflichtet, alle Maßnahmen zu unterlassen, die den Bestand oder den Betrieb der Leitung oder sonstiger Einrichtungen gefährden oder beeinträchtigen. Werden o.g. Straßen Dritten zur Nutzung überlassen, unterrichtet die Gemeinde nicht verpflichtet diese im Zuge von angezeigten Bauarbeiten und bei zukünftigen Nutzungsüberlassungen mit deren Gewährung über diese Leitungseinlegung zu unterrichten.
+Die Gemeinde ist verpflichtet, alle Maßnahmen zu unterlassen, die den Bestand oder den Betrieb der Leitung oder sonstiger Einrichtungen gefährden oder beeinträchtigen. Werden o.g. Straßen Dritten zur Nutzung überlassen, ist die Gemeinde verpflichtet, diese im Zuge von angezeigten Bauarbeiten und bei zukünftigen Nutzungsüberlassungen mit deren Gewährung über diese Leitungseinlegung zu unterrichten.
 
 (2) Die Verlegung hat entsprechend den vorgelegten Planunterlagen (Anlagen) zu erfolgen. Eine etwaige Verpflichtung des Betreibers zur Einholung öffentlich-rechtlicher Genehmigungen, Gestattungen oder Erlaubnisse, die nach anderen Rechtsvorschriften erforderlich sind, bleibt unberührt.
 

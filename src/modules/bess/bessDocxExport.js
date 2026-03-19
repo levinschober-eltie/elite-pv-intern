@@ -87,7 +87,7 @@ function buildDaten(formData, ergebnis) {
     satzProM2: String(formData.satzProM2 || "8").replace(".", ","),
     wertsicherung: String(formData.wertsicherungProzent || 10),
     vorhalteProzent: String(formData.vorhalteProzent || 50),
-    rueckbauBetrag: formatEuro(ergebnis.rueckbau.buergschaftBetrag),
+    rueckbauBetrag: ergebnis.rueckbau ? formatEuro(ergebnis.rueckbau.buergschaftBetrag) : "–",
     laufzeitJahre: String(ergebnis.laufzeitJahre || 20),
     vertragsnummer: generiereVertragsnummer("EPV-BESS"),
     vertragsdatum: formatDatum(new Date()),
