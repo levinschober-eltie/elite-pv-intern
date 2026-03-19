@@ -20,8 +20,8 @@ function berechneModellA(params) {
   let gesamtPacht = 0;
 
   for (let j = 1; j <= laufzeitJahre; j++) {
-    // Wertsicherung: +10% ab 11. Betriebsjahr (Enerpeak §5.2)
-    const wertsicherungsFaktor = j > 10 ? 1 : 0;
+    // Wertsicherung: +10% nach jeweils 10 vollen Jahren (Enerpeak §5.2)
+    const wertsicherungsFaktor = Math.floor((j - 1) / 10);
     const faktor = Math.pow(1 + wertsicherungProzent / 100, wertsicherungsFaktor);
     const jahresPacht = pachtzinsJahr * faktor;
     gesamtPacht += jahresPacht;
@@ -57,7 +57,7 @@ function berechneModellB(params) {
   let gesamtPacht = 0;
 
   for (let j = 1; j <= laufzeitJahre; j++) {
-    const wertsicherungsFaktor = j > 10 ? 1 : 0;
+    const wertsicherungsFaktor = Math.floor((j - 1) / 10);
     const faktor = Math.pow(1 + wertsicherungProzent / 100, wertsicherungsFaktor);
     const jahresPacht = pachtzinsJahr * faktor;
     gesamtPacht += jahresPacht;
@@ -98,7 +98,7 @@ function berechneModellC(params) {
   let gesamtPacht = 0;
 
   for (let j = 1; j <= laufzeitJahre; j++) {
-    const wertsicherungsFaktor = j > 10 ? 1 : 0;
+    const wertsicherungsFaktor = Math.floor((j - 1) / 10);
     const faktor = Math.pow(1 + wertsicherungProzent / 100, wertsicherungsFaktor);
     const jahresPacht = pachtzinsJahr * faktor;
     gesamtPacht += jahresPacht;
@@ -169,10 +169,10 @@ export const BESS_TECHNOLOGIEN = [
 // MASTER-FUNKTION: Alle 3 Modelle berechnen
 // ============================================================
 export function berechneBESS(formData) {
-  const bessFlaecheM2 = parseFloat(formData.bessFlaecheM2) || 0;
-  const leistungMw = parseFloat(formData.leistungMw) || 0;
-  const kapazitaetMwh = parseFloat(formData.kapazitaetMwh) || 0;
-  const laufzeitJahre = parseInt(formData.laufzeitJahre) || 20;
+  const bessFlaecheM2 = Math.max(0, parseFloat(formData.bessFlaecheM2) || 0);
+  const leistungMw = Math.max(0, parseFloat(formData.leistungMw) || 0);
+  const kapazitaetMwh = Math.max(0, parseFloat(formData.kapazitaetMwh) || 0);
+  const laufzeitJahre = Math.max(1, parseInt(formData.laufzeitJahre) || 20);
 
   const modellA = berechneModellA({
     bessFlaecheM2,
