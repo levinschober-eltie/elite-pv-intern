@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from "react";
+import React, { useState, useMemo, memo, useRef } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import {
@@ -103,6 +103,7 @@ export default function DachpachtGenerator() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const exportingRef = useRef(false);
   const [klauseln, setKlauseln] = useState(
     () => getKlauseln("dachpacht", DACHPACHT_KLAUSELN)
   );
@@ -153,6 +154,15 @@ export default function DachpachtGenerator() {
   };
 
   const update = (key) => (value) => {
+    // Clamping für kritische Felder
+    if (["preisanpassung1", "preisanpassung2", "preisanpassung3"].includes(key)) {
+      value = Math.max(0, Math.min(10, Number(value) || 0));
+    } else if (key === "laufzeitJahre") {
+      value = Math.max(1, Math.min(40, Number(value) || 1));
+    } else if (["bruttoDachflaeche", "nutzbareDachflaeche", "leistungKwp"].includes(key)) {
+      const num = Number(value);
+      if (!isNaN(num) && num < 0) value = 0;
+    }
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -226,6 +236,8 @@ export default function DachpachtGenerator() {
 
   // DOCX-Export
   const handleDocxExport = async (typ) => {
+    if (exportingRef.current) return;
+    exportingRef.current = true;
     setIsGenerating(true);
     try {
       const exportData = {
@@ -259,6 +271,7 @@ export default function DachpachtGenerator() {
       showToast("DOCX-Fehler: " + error.message, "error");
     } finally {
       setIsGenerating(false);
+      exportingRef.current = false;
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatProzent } from "../../lib/formatters";
 import { clampValue, getWarnung, VALIDIERUNG } from "../../lib/validators";
@@ -22,6 +22,7 @@ export default function WartungGenerator() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const exportingRef = useRef(false);
   const [klauseln, setKlauseln] = useState(
     () => getKlauseln("wartung", DEFAULT_KLAUSELN)
   );
@@ -130,6 +131,8 @@ export default function WartungGenerator() {
 
   // DOCX-Export
   const handleDocxExport = async (mitVertrag) => {
+    if (exportingRef.current) return;
+    exportingRef.current = true;
     setIsGenerating(true);
     try {
       const exportFormData = {
@@ -153,6 +156,7 @@ export default function WartungGenerator() {
       showToast("DOCX-Fehler: " + error.message, "error");
     } finally {
       setIsGenerating(false);
+      exportingRef.current = false;
     }
   };
 

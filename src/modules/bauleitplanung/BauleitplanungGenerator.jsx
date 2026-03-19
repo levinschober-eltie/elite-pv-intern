@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import { DURCHFUEHRUNG_KLAUSELN, KOMMUNAL_KLAUSELN, AUSGLEICH_KLAUSELN } from "./bauleitplanungClauses";
@@ -31,6 +31,7 @@ export default function BauleitplanungGenerator() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const exportingRef = useRef(false);
 
   const [selectedProjekt, setSelectedProjekt] = useState(null);
   const [signaturGemeinde, setSignaturGemeinde] = useState({ name: "", date: "", data: null });
@@ -155,6 +156,8 @@ export default function BauleitplanungGenerator() {
 
   // DOCX
   const handleDocxExport = async () => {
+    if (exportingRef.current) return;
+    exportingRef.current = true;
     setIsGenerating(true);
     try {
       const exportFormData = {
@@ -187,6 +190,7 @@ export default function BauleitplanungGenerator() {
       showToast("DOCX-Fehler: " + error.message, "error");
     } finally {
       setIsGenerating(false);
+      exportingRef.current = false;
     }
   };
 

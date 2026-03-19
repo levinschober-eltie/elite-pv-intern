@@ -688,18 +688,22 @@ export function createClauseParagraphs(klauseln) {
       })
     );
 
-    // Klausel-Text
+    // Klausel-Text (split by \n to preserve line breaks in DOCX)
+    const lines = (klausel.text || "").split("\n");
+    const textChildren = [];
+    lines.forEach((line, i) => {
+      if (i > 0) textChildren.push(new TextRun({ break: 1 }));
+      textChildren.push(new TextRun({
+        text: line,
+        size: 18,
+        font: "DM Sans",
+        color: "444444",
+      }));
+    });
     paragraphs.push(
       new Paragraph({
         spacing: { after: 100 },
-        children: [
-          new TextRun({
-            text: klausel.text,
-            size: 18,
-            font: "DM Sans",
-            color: "444444",
-          }),
-        ],
+        children: textChildren,
       })
     );
   }

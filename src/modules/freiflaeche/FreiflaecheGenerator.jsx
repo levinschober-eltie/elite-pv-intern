@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro, formatZahl } from "../../lib/formatters";
 import {
@@ -110,6 +110,7 @@ export default function FreiflaecheGenerator() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const exportingRef = useRef(false);
   const [klauseln, setKlauseln] = useState(
     () => getKlauseln("freiflaeche", FREIFLAECHE_KLAUSELN)
   );
@@ -204,6 +205,15 @@ export default function FreiflaecheGenerator() {
   };
 
   const update = (key) => (value) => {
+    // Clamping für kritische Felder
+    if (key === "wertsicherungProzent") {
+      value = Math.max(0, Math.min(10, Number(value) || 0));
+    } else if (key === "laufzeitJahre") {
+      value = Math.max(1, Math.min(40, Number(value) || 1));
+    } else if (["gesamtflaecheHa", "pachtflaecheHa", "leistungMwp", "speicherflaecheM2"].includes(key)) {
+      const num = Number(value);
+      if (!isNaN(num) && num < 0) value = 0;
+    }
     setFormData((prev) => ({ ...prev, [key]: value }));
     // Pachtfläche auch in Bewertung synchronisieren
     if (key === "pachtflaecheHa") {
@@ -274,6 +284,8 @@ export default function FreiflaecheGenerator() {
 
   // DOCX-Export
   const handleDocxExport = async (typ) => {
+    if (exportingRef.current) return;
+    exportingRef.current = true;
     setIsGenerating(true);
     try {
       const exportData = {
@@ -305,6 +317,7 @@ export default function FreiflaecheGenerator() {
       showToast("DOCX-Fehler: " + error.message, "error");
     } finally {
       setIsGenerating(false);
+      exportingRef.current = false;
     }
   };
 

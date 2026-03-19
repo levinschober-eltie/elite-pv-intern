@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { COLORS, styles } from "../../theme";
 import { formatEuro } from "../../lib/formatters";
 import { GEMEINDE_KLAUSELN, PRIVAT_KLAUSELN } from "./leitungswegClauses";
@@ -195,6 +195,7 @@ export default function LeitungswegGenerator() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const exportingRef = useRef(false);
 
   const [selectedProjekt, setSelectedProjekt] = useState(null);
   const [signaturParteiA, setSignaturParteiA] = useState({ name: "", date: "", data: null });
@@ -293,6 +294,8 @@ export default function LeitungswegGenerator() {
 
   // DOCX-Export
   const handleDocxExport = async () => {
+    if (exportingRef.current) return;
+    exportingRef.current = true;
     setIsGenerating(true);
     try {
       const exportData = {
@@ -324,6 +327,7 @@ export default function LeitungswegGenerator() {
       showToast("DOCX-Fehler: " + error.message, "error");
     } finally {
       setIsGenerating(false);
+      exportingRef.current = false;
     }
   };
 
