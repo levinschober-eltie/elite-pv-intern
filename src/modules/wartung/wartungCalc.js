@@ -22,11 +22,21 @@ export const MONTAGE_FAKTOREN = {
 export function berechneWartung(formData) {
   const preise = PRICING[formData.kundentyp] || PRICING.Gewerbe;
 
+  const leistungKwp = parseFloat(formData.leistungKwp) || 0;
+  const wechselrichterAnzahl = parseInt(formData.wechselrichterAnzahl) || 1;
+  const flaechenAnzahl = parseInt(formData.flaechenAnzahl) || 1;
+  const unterverteilungen = parseInt(formData.unterverteilungen) || 1;
+  const anlagenalter = parseInt(formData.anlagenalter) || 0;
+  const entfernungKm = parseFloat(formData.entfernungKm) || 0;
+  const wartungenProJahr = parseInt(formData.wartungenProJahr) || 1;
+  const erstlaufzeitMonate = parseInt(formData.erstlaufzeitMonate) || 60;
+  const rabattAnteil = parseFloat(formData.rabattAnteil) || 0;
+
   // Zuschläge
-  const kwpZuschlag = Math.max(0, (formData.leistungKwp - preise.freiKwp) * preise.kwpFaktor);
-  const wrZuschlag = Math.max(0, (formData.wechselrichterAnzahl - 1) * 45);
-  const flaechenZuschlag = Math.max(0, (formData.flaechenAnzahl - 1) * 35);
-  const uvZuschlag = Math.max(0, (formData.unterverteilungen - 1) * 25);
+  const kwpZuschlag = Math.max(0, (leistungKwp - preise.freiKwp) * preise.kwpFaktor);
+  const wrZuschlag = Math.max(0, (wechselrichterAnzahl - 1) * 45);
+  const flaechenZuschlag = Math.max(0, (flaechenAnzahl - 1) * 35);
+  const uvZuschlag = Math.max(0, (unterverteilungen - 1) * 25);
   const speicherZuschlag = formData.hatSpeicher ? 55 : 0;
 
   // Technikpreis (Basis + Zuschläge × Faktoren)
@@ -34,17 +44,17 @@ export function berechneWartung(formData) {
     preise.basispreis + kwpZuschlag + wrZuschlag + flaechenZuschlag + uvZuschlag + speicherZuschlag;
   const montageFaktor = MONTAGE_FAKTOREN[formData.montageart] || 1;
   const zugangsFaktor = ZUGANGS_FAKTOREN[formData.zugang] || 1;
-  const altersFaktor = formData.anlagenalter > 10 ? 1.15 : formData.anlagenalter > 5 ? 1.05 : 1;
+  const altersFaktor = anlagenalter > 10 ? 1.15 : anlagenalter > 5 ? 1.05 : 1;
   const technikpreis = zwischensumme * montageFaktor * zugangsFaktor * altersFaktor;
 
   // Fahrtkosten: (km - 35 Frei-km) × 2.40 €/km
-  const fahrtkosten = Math.max(0, (formData.entfernungKm - 35)) * 2 * 1.2;
+  const fahrtkosten = Math.max(0, (entfernungKm - 35)) * 2 * 1.2;
 
   // Pro Termin
   const preisProTermin = technikpreis + fahrtkosten;
 
   // Jahresentgelt
-  const jahresTerminkosten = preisProTermin * formData.wartungenProJahr;
+  const jahresTerminkosten = preisProTermin * wartungenProJahr;
   const monitoringKosten = formData.hatMonitoring ? 120 : 0;
   const thermografieKosten = formData.hatThermografie ? 180 : 0;
   const slaKosten = formData.hatSLA ? 240 : 0;
@@ -53,10 +63,10 @@ export function berechneWartung(formData) {
 
   // Rabatt-Staffelung nach Laufzeit
   const rabatt =
-    formData.erstlaufzeitMonate >= 60
-      ? formData.rabattAnteil
-      : formData.erstlaufzeitMonate >= 36
-      ? formData.rabattAnteil / 2
+    erstlaufzeitMonate >= 60
+      ? rabattAnteil
+      : erstlaufzeitMonate >= 36
+      ? rabattAnteil / 2
       : 0;
 
   const jahresEntgeltNetto = jahresEntgeltVorRabatt * (1 - rabatt);

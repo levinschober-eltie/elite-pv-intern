@@ -678,7 +678,7 @@ export function createClauseParagraphs(klauseln) {
         spacing: { before: 200, after: 60 },
         children: [
           new TextRun({
-            text: klausel.titel,
+            text: klausel.titel || "",
             bold: true,
             size: 20,
             font: "DM Sans",

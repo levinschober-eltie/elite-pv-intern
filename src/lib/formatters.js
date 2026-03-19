@@ -16,6 +16,7 @@ export const formatProzent = (value) => {
 
 export const formatDatum = (date) => {
   const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return "–";
   return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
