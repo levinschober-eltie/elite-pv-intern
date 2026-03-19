@@ -79,7 +79,7 @@ function buildDaten(formData, ergebnis) {
     )
     .join("\n");
 
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`] || ergebnis.modellA || {};
 
   return {
     eigentuemerName: name,
@@ -114,7 +114,7 @@ function buildDaten(formData, ergebnis) {
 // ============================================================
 export async function generateFreiflaechePreisblattDocx(formData, ergebnis) {
   const { modellA, modellB, modellC, modellD, vorhalteverguetung, speicher, rueckbau } = ergebnis;
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`] || ergebnis.modellA || {};
 
   const eig = formData.eigentuemer || {};
   const partner = eig.partner || [];
@@ -257,7 +257,7 @@ export async function generateFreiflaechePreisblattDocx(formData, ergebnis) {
 // VERTRAG EXPORT
 // ============================================================
 export async function generateFreiflaecheVertragDocx(formData, ergebnis, klauseln) {
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`] || ergebnis.modellA || {};
   const platzhalterDaten = buildDaten(formData, ergebnis);
 
   const eig = formData.eigentuemer || {};
