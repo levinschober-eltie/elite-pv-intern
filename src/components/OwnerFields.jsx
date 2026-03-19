@@ -18,7 +18,7 @@ const EIGENTUMS_ARTEN = [
 ];
 
 const leerePartner = () => ({
-  id: Date.now().toString(),
+  id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
   name: "",
   geburtsdatum: "",
   adresse: "",
@@ -30,7 +30,7 @@ export default function OwnerFields({ eigentuemer, onChange }) {
   };
 
   const updatePartner = (index, key) => (value) => {
-    const neuePartner = [...eigentuemer.partner];
+    const neuePartner = [...(eigentuemer.partner || [])];
     neuePartner[index] = { ...neuePartner[index], [key]: value };
     onChange({ ...eigentuemer, partner: neuePartner });
   };
@@ -38,13 +38,13 @@ export default function OwnerFields({ eigentuemer, onChange }) {
   const addPartner = () => {
     onChange({
       ...eigentuemer,
-      partner: [...eigentuemer.partner, leerePartner()],
+      partner: [...(eigentuemer.partner || []), leerePartner()],
     });
   };
 
   const removePartner = (index) => {
-    if (eigentuemer.partner.length <= 1) return;
-    const neuePartner = eigentuemer.partner.filter((_, i) => i !== index);
+    if ((eigentuemer.partner || []).length <= 1) return;
+    const neuePartner = (eigentuemer.partner || []).filter((_, i) => i !== index);
     onChange({ ...eigentuemer, partner: neuePartner });
   };
 
@@ -126,6 +126,7 @@ export default function OwnerFields({ eigentuemer, onChange }) {
               : "Beteiligte Personen"}
           </span>
           <button
+            type="button"
             style={{
               ...styles.btnOutline,
               fontSize: 11,
@@ -137,7 +138,7 @@ export default function OwnerFields({ eigentuemer, onChange }) {
           </button>
         </div>
 
-        {eigentuemer.partner.map((partner, index) => (
+        {(eigentuemer.partner || []).map((partner, index) => (
           <div
             key={partner.id}
             style={{
@@ -159,8 +160,9 @@ export default function OwnerFields({ eigentuemer, onChange }) {
               <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.mid }}>
                 Person {index + 1}
               </span>
-              {eigentuemer.partner.length > 1 && (
+              {(eigentuemer.partner || []).length > 1 && (
                 <button
+                  type="button"
                   style={{
                     background: "none",
                     border: "none",

@@ -120,6 +120,7 @@ export default function SignaturePad({
           background: "#FAFAFA",
           cursor: "crosshair",
           display: "block",
+          touchAction: "none",
         }}
       />
 

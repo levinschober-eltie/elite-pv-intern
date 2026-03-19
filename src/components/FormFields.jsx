@@ -33,15 +33,7 @@ export const TextInput = ({
           id={id}
           type={type}
           value={value}
-          onChange={(e) =>
-            onChange(
-              type === "number"
-                ? e.target.value === ""
-                  ? ""
-                  : +e.target.value
-                : e.target.value
-            )
-          }
+          onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           style={{
             ...styles.input,

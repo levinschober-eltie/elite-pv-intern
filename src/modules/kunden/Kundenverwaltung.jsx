@@ -129,7 +129,7 @@ export default function Kundenverwaltung() {
     } else {
       const neuerKunde = {
         ...form,
-        id: Date.now().toString(),
+        id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
         erstelltAm: now,
         geaendertAm: now,
       };
@@ -190,7 +190,8 @@ export default function Kundenverwaltung() {
         let addedCount = 0;
         const merged = [...kunden];
         for (const item of valid) {
-          if (item.id && !existingIds.has(item.id)) {
+          if (!item.id) item.id = Date.now().toString() + Math.random().toString(36).slice(2, 6);
+          if (!existingIds.has(item.id)) {
             merged.push(item);
             existingIds.add(item.id);
             addedCount++;
@@ -211,7 +212,7 @@ export default function Kundenverwaltung() {
   const gefilterteKunden = kunden.filter((k) => {
     const suchMatch =
       !suchbegriff ||
-      k.name.toLowerCase().includes(suchbegriff.toLowerCase()) ||
+      (k.name || "").toLowerCase().includes(suchbegriff.toLowerCase()) ||
       (k.ort && k.ort.toLowerCase().includes(suchbegriff.toLowerCase()));
     const typMatch = filterTyp === "Alle" || k.typ === filterTyp;
     return suchMatch && typMatch;

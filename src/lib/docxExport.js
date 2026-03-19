@@ -392,34 +392,42 @@ export function createDocxSignatureBlock(partyA, partyB, options = {}) {
 
   // Helper: convert base64 data URL to Uint8Array
   function base64ToUint8Array(dataUrl) {
-    const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
-    const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    try {
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    } catch (err) {
+      console.warn("Signatur-Bild konnte nicht dekodiert werden:", err);
+      return null;
     }
-    return bytes;
   }
 
   // Optional signature image rows (inserted before the signature line)
   const signatureImageRows = [];
   if (options.signatureImageA || options.signatureImageB) {
-    const leftChildren = options.signatureImageA
+    const sigDataA = options.signatureImageA ? base64ToUint8Array(options.signatureImageA) : null;
+    const sigDataB = options.signatureImageB ? base64ToUint8Array(options.signatureImageB) : null;
+
+    const leftChildren = sigDataA
       ? [new Paragraph({
           children: [
             new ImageRun({
-              data: base64ToUint8Array(options.signatureImageA),
+              data: sigDataA,
               transformation: { width: 200, height: 80 },
             }),
           ],
         })]
       : [new Paragraph({ children: [] })];
 
-    const rightChildren = options.signatureImageB
+    const rightChildren = sigDataB
       ? [new Paragraph({
           children: [
             new ImageRun({
-              data: base64ToUint8Array(options.signatureImageB),
+              data: sigDataB,
               transformation: { width: 200, height: 80 },
             }),
           ],

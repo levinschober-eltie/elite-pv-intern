@@ -236,7 +236,7 @@ export async function generateDurchfuehrungsvertragDocx(formData, klauseln) {
     subtitle: `${formData.projektName || "PV-Anlage"} | ${gemeindeName} | Elite PV GmbH`,
     sections: [...sections, { type: "paragraphs", items: [standParagraph] }],
     klauseln: ersetzte,
-    signatureParties: [`${gemeindeName}\n${formData.buergermeisterName || "Bürgermeister/in"}`, "Elite PV GmbH\nLevin Schober"],
+    signatureParties: [`${gemeindeName} – ${formData.buergermeisterName || "Bürgermeister/in"}`, "Elite PV GmbH – Levin Schober"],
     signatureImages: formData.signatureImages,
     fileName: `Durchfuehrungsvertrag_${(formData.projektName || "PV").replace(/[\s,]+/g, "_")}_${gemeindeName.replace(/[\s,]+/g, "_")}.docx`,
   });
@@ -360,7 +360,7 @@ export async function generateKommunalbeteiligungDocx(formData, klauseln) {
     subtitle: `${formData.projektName || "FFA"} | ${gemeindeName} | Elite PV GmbH`,
     sections: [...sections, { type: "paragraphs", items: [standParagraph] }],
     klauseln: ersetzte,
-    signatureParties: ["Elite PV GmbH (Betreiber)", `${gemeindeName}\n${formData.buergermeisterName || "Bürgermeister/in"}`],
+    signatureParties: ["Elite PV GmbH (Betreiber)", `${gemeindeName} – ${formData.buergermeisterName || "Bürgermeister/in"}`],
     signatureImages: formData.signatureImages,
     fileName: `Kommunalbeteiligung_${(formData.projektName || "FFA").replace(/[\s,]+/g, "_")}_${gemeindeName.replace(/[\s,]+/g, "_")}.docx`,
   });
@@ -518,7 +518,7 @@ export async function generateAusgleichsvertragDocx(formData, klauseln) {
     subtitle: `${formData.projektName || "PV-Anlage"} | ${gemeindeName} | Elite PV GmbH`,
     sections: [...sections, { type: "paragraphs", items: [standParagraph] }],
     klauseln: ersetzte,
-    signatureParties: [`${gemeindeName}\n${formData.buergermeisterName || "Bürgermeister/in"}`, "Elite PV GmbH\nLevin Schober"],
+    signatureParties: [`${gemeindeName} – ${formData.buergermeisterName || "Bürgermeister/in"}`, "Elite PV GmbH – Levin Schober"],
     signatureImages: formData.signatureImages,
     fileName: `Ausgleichsvertrag_${(formData.projektName || "PV").replace(/[\s,]+/g, "_")}_${gemeindeName.replace(/[\s,]+/g, "_")}.docx`,
   });

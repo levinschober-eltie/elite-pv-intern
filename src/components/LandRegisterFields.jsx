@@ -30,11 +30,11 @@ export default function LandRegisterFields({ zeilen, onChange }) {
 
   // Summen berechnen
   const summeGesamt = zeilen.reduce(
-    (sum, z) => sum + (parseFloat(z.gesamtflaecheHa) || 0),
+    (sum, z) => sum + Math.max(0, parseFloat(z.gesamtflaecheHa) || 0),
     0
   );
   const summePacht = zeilen.reduce(
-    (sum, z) => sum + (parseFloat(z.pachtflaecheHa) || 0),
+    (sum, z) => sum + Math.max(0, parseFloat(z.pachtflaecheHa) || 0),
     0
   );
 
@@ -87,6 +87,7 @@ export default function LandRegisterFields({ zeilen, onChange }) {
           Grundbucheinträge
         </span>
         <button
+          type="button"
           style={{
             ...styles.btnOutline,
             fontSize: 11,
@@ -153,6 +154,7 @@ export default function LandRegisterFields({ zeilen, onChange }) {
             <div style={{ width: 32, textAlign: "center" }}>
               {zeilen.length > 1 && (
                 <button
+                  type="button"
                   style={{
                     background: "none",
                     border: "none",
