@@ -1565,6 +1565,7 @@ export default function FreiflaecheGenerator() {
               klauseln={klauseln}
               setKlauseln={setKlauseln}
               defaultKlauseln={FREIFLAECHE_KLAUSELN}
+              storageKey="freiflaeche"
             />
           </Section>
 

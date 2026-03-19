@@ -1,15 +1,20 @@
 import React from "react";
 import { styles, COLORS } from "../theme";
+import { setKlauseln as persistKlauseln } from "../lib/klauselStore";
 
-export default function ClauseEditor({ klauseln, setKlauseln, defaultKlauseln }) {
+export default function ClauseEditor({ klauseln, setKlauseln, defaultKlauseln, storageKey }) {
   const updateKlausel = (id, neuerText) => {
-    setKlauseln((prev) =>
-      prev.map((k) => (k.id === id ? { ...k, text: neuerText } : k))
-    );
+    setKlauseln((prev) => {
+      const next = prev.map((k) => (k.id === id ? { ...k, text: neuerText } : k));
+      if (storageKey) persistKlauseln(storageKey, next);
+      return next;
+    });
   };
 
   const resetKlauseln = () => {
-    setKlauseln(defaultKlauseln.map((k) => ({ ...k })));
+    const defaults = defaultKlauseln.map((k) => ({ ...k }));
+    setKlauseln(defaults);
+    if (storageKey) persistKlauseln(storageKey, defaults);
   };
 
   return (
@@ -31,6 +36,7 @@ export default function ClauseEditor({ klauseln, setKlauseln, defaultKlauseln })
       ))}
       <div style={{ textAlign: "right", marginTop: 4 }}>
         <button
+          type="button"
           style={{ ...styles.btnOutline, fontSize: 11, padding: "5px 12px" }}
           onClick={resetKlauseln}
         >

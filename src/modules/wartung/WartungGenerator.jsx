@@ -118,7 +118,7 @@ export default function WartungGenerator() {
   // Pflichtfeld-Fehler (rot, blockieren Export)
   const fehler = [];
   if (!formData.kundenname.trim()) fehler.push("Kundenname fehlt");
-  if (formData.leistungKwp === 0) fehler.push("Leistung kWp = 0");
+  if (!formData.leistungKwp || parseFloat(formData.leistungKwp) === 0) fehler.push("Leistung kWp = 0");
 
   // Alle Meldungen für Banner
   const alleMeldungen = [...fehler.map(f => "❌ " + f), ...warnungen];
@@ -502,6 +502,7 @@ export default function WartungGenerator() {
               klauseln={klauseln}
               setKlauseln={setKlauseln}
               defaultKlauseln={DEFAULT_KLAUSELN}
+              storageKey="wartung"
             />
           </Section>
 

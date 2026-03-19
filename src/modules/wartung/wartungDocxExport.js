@@ -15,7 +15,7 @@ export async function generateWartungDocx(formData, ergebnis, klauseln) {
     entries: [
       ["Kunde", formData.kundenname || "–"],
       ["Ansprechpartner", formData.ansprechpartner || "–"],
-      ["Adresse", `${formData.strasse}, ${formData.plz} ${formData.ort}`],
+      ["Adresse", (formData.strasse || formData.ort) ? `${formData.strasse || "–"}, ${formData.plz || ""} ${formData.ort || "–"}`.trim() : "–"],
       ["Kundentyp", formData.kundentyp],
     ],
   });
