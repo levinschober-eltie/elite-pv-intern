@@ -275,8 +275,6 @@ export default function FreiflaecheGenerator() {
   if (leistungMwp > 0 && leistungMwp < 0.5) warnungen.push("Leistung < 0,5 MWp – wirtschaftlich fragwürdig");
   if (formData.nutzungsart === "Acker" && formData.bodenklasse === "Hoch (>60 Bodenpunkte)")
     warnungen.push("Hochwertiger Ackerboden – mögliche Restriktionen bei EEG-Ausschreibung");
-  if (!formData.gewaehlteModell) warnungen.push("Kein Pachtmodell gewählt");
-
   const alleMeldungen = [...fehler.map((f) => "❌ " + f), ...warnungen];
   const exportGesperrt = fehler.length > 0;
 

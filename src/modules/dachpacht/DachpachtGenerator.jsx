@@ -224,8 +224,6 @@ export default function DachpachtGenerator() {
   if (effektivKwp > 0 && effektivKwp < 30) warnungen.push("Leistung < 30 kWp – Dachpacht ggf. unwirtschaftlich");
   if (formData.ausrichtung === "Nord") warnungen.push("Nord-Ausrichtung – geringe Erträge erwartet");
   if (formData.statik === "Ausstehend") warnungen.push("Statikprüfung steht noch aus – vor Vertragsschluss klären");
-  if (!formData.gewaehlteModell) warnungen.push("Kein Pachtmodell gewählt");
-
   // Alle Meldungen für Banner
   const alleMeldungen = [...fehler.map(f => "❌ " + f), ...warnungen];
 
