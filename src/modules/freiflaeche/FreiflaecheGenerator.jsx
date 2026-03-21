@@ -253,7 +253,7 @@ export default function FreiflaecheGenerator() {
     bewertung,
   ]);
 
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell}`] || ergebnis.modellA || {};
 
   // Validierung
   const eigName = (eigentuemer.partner || []).map((p) => p.name).filter(Boolean).join(", ");

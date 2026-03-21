@@ -202,7 +202,7 @@ export default function DachpachtGenerator() {
     formData.dachtyp,
   ]);
 
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell}`] || ergebnis.modell1 || {};
 
   // Validierung
   const eigName = (eigentuemer.partner || []).map(p => p.name).filter(Boolean).join(", ");
