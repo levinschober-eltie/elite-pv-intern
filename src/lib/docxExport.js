@@ -767,7 +767,7 @@ export async function generateDocx(config) {
   }
 
   // Unterschriften (PageBreak davor, damit Unterschriften nie abgeschnitten werden)
-  if (signatureParties) {
+  if (signatureParties && signatureParties.length >= 2) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(
       ...createDocxSignatureBlock(signatureParties[0], signatureParties[1], signatureImages || {})
