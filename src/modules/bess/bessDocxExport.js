@@ -325,8 +325,8 @@ export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
   sections.push({
     type: "keyValue",
     entries: [
-      ["Vorhaltevergütung", `${formatEuro(ergebnis.vorhalteverguetung.betragJahr)} / Jahr`],
-      ["Rückbaubürgschaft", `${formatEuro(ergebnis.rueckbau.buergschaftBetrag)}`],
+      ["Vorhaltevergütung", `${formatEuro(ergebnis.vorhalteverguetung?.betragJahr || 0)} / Jahr`],
+      ["Rückbaubürgschaft", `${formatEuro(ergebnis.rueckbau?.buergschaftBetrag || 0)}`],
     ],
   });
   sections.push({ type: "spacing", size: 200 });
