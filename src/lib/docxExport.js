@@ -207,7 +207,7 @@ export function createDocxTable(headers, rows, options = {}) {
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: String(cell),
+                      text: String(cell ?? ""),
                       size: 18,
                       font: "DM Sans",
                       bold: highlightLastRow && rowIdx === rows.length - 1,
@@ -288,7 +288,7 @@ export function createKeyValueTable(entries) {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: String(value),
+                    text: String(value ?? ""),
                     bold: true,
                     size: 18,
                     font: "DM Sans",
