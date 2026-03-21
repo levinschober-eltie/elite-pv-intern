@@ -102,7 +102,7 @@ function buildDaten(formData, ergebnis) {
 // ============================================================
 export async function generateBESSPreisblattDocx(formData, ergebnis) {
   const { modellA, modellB, modellC, vorhalteverguetung, rueckbau } = ergebnis;
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`] || ergebnis.modellA || {};
 
   const eig = formData.eigentuemer || {};
   const partner = eig.partner || [];
@@ -193,7 +193,7 @@ export async function generateBESSPreisblattDocx(formData, ergebnis) {
 // VERTRAG EXPORT
 // ============================================================
 export async function generateBESSVertragDocx(formData, ergebnis, klauseln) {
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || "A"}`] || ergebnis.modellA || {};
   const platzhalterDaten = buildDaten(formData, ergebnis);
 
   const eig = formData.eigentuemer || {};

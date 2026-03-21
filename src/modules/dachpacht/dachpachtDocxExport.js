@@ -124,7 +124,7 @@ function buildEigentuemerDaten(formData, ergebnis, gewaehltes) {
 // ============================================================
 export async function generateDachpachtPreisblattDocx(formData, ergebnis) {
   const { modell1, modell2, modell3 } = ergebnis;
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || 1}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || 1}`] || ergebnis.modell1 || {};
 
   const sections = [];
 
@@ -211,7 +211,7 @@ export async function generateDachpachtPreisblattDocx(formData, ergebnis) {
 // VERTRAG EXPORT
 // ============================================================
 export async function generateDachpachtVertragDocx(formData, ergebnis, klauseln) {
-  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || 1}`];
+  const gewaehltes = ergebnis[`modell${formData.gewaehlteModell || 1}`] || ergebnis.modell1 || {};
   const platzhalterDaten = buildEigentuemerDaten(formData, ergebnis, gewaehltes);
 
   const eig = formData.eigentuemer || {};
